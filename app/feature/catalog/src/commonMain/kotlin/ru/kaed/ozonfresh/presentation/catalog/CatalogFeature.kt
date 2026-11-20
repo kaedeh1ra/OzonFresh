@@ -234,6 +234,7 @@ private fun LazyListScope.productGrid(
                     onAdd = { onIntent(CatalogContract.Intent.Add(product.id)) },
                     onQuantityChange = { onIntent(CatalogContract.Intent.ChangeQuantity(product.id, it)) },
                     modifier = Modifier.weight(1f),
+                    productId = product.id,
                 )
             }
             repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }

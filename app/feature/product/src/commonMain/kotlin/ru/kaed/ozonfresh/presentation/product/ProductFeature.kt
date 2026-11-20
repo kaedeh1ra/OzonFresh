@@ -126,6 +126,7 @@ fun ProductScreen(state: ProductContract.State, onIntent: (ProductContract.Inten
                     Modifier.fillMaxWidth().aspectRatio(1.15f),
                     emojiSize = 150.sp,
                     shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+                    productId = product.id,
                 )
                 Row(
                     Modifier.align(Alignment.TopEnd).padding(12.dp),

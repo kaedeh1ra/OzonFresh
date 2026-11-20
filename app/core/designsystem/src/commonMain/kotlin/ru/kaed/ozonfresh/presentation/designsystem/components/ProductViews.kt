@@ -1,5 +1,6 @@
 package ru.kaed.ozonfresh.presentation.designsystem.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -34,19 +37,34 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.painterResource
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
-/** Картинка-заглушка товара: эмодзи на светлом фоне вместо фото. */
+/**
+ * Картинка товара: фото из ресурсов, если оно есть для [productId] (см. ProductPhotos), иначе эмодзи
+ * на светлом фоне.
+ */
 @Composable
 fun ProductImage(
     emoji: String,
     modifier: Modifier = Modifier,
     emojiSize: TextUnit = 56.sp,
     shape: RoundedCornerShape = RoundedCornerShape(24.dp),
+    productId: String? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
+    val photo = productId?.let(::productPhoto)
     Box(modifier.clip(shape).background(FreshColors.Card), contentAlignment = Alignment.Center) {
-        Text(emoji, fontSize = emojiSize, textAlign = TextAlign.Center)
+        if (photo != null) {
+            Image(
+                painterResource(photo),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Text(emoji, fontSize = emojiSize, textAlign = TextAlign.Center)
+        }
         overlay()
     }
 }
@@ -138,9 +156,10 @@ fun ProductCard(
     modifier: Modifier = Modifier,
     tag: String? = null,
     tagColor: Color = FreshColors.TealText,
+    productId: String? = null,
 ) {
     Column(modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick)) {
-        ProductImage(emoji, Modifier.fillMaxWidth().aspectRatio(1f)) {
+        ProductImage(emoji, Modifier.fillMaxWidth().aspectRatio(1f), productId = productId) {
             NavIconView(
                 NavIcon.Heart,
                 FreshColors.Line,

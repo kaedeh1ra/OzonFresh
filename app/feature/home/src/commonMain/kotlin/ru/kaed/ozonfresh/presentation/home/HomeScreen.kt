@@ -33,9 +33,9 @@ import ru.kaed.ozonfresh.navigation.AppNavigator
 import ru.kaed.ozonfresh.navigation.Destinations
 import ru.kaed.ozonfresh.presentation.designsystem.components.CategoryTile
 import ru.kaed.ozonfresh.presentation.designsystem.components.CouponCard
+import ru.kaed.ozonfresh.presentation.designsystem.components.ProductCard
 import ru.kaed.ozonfresh.presentation.designsystem.components.PromoBanner
 import ru.kaed.ozonfresh.presentation.designsystem.components.PromoStory
-import ru.kaed.ozonfresh.presentation.designsystem.components.ProductCard
 import ru.kaed.ozonfresh.presentation.designsystem.components.SearchBar
 import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
 import ru.kaed.ozonfresh.presentation.designsystem.components.ShopHeader
@@ -225,5 +225,6 @@ private fun ShopProductCard(
         onAdd = { onIntent(Intent.Add(product.id)) },
         onQuantityChange = { onIntent(Intent.ChangeQuantity(product.id, it)) },
         modifier = modifier,
+        productId = product.id,
     )
 }

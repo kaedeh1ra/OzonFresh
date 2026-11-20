@@ -98,7 +98,7 @@ private fun ReplenishmentCard(
     val overdue = item.daysUntilDue(today) <= 0
     Column(Modifier.width(CARD_WIDTH)) {
         Column(Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onOpen)) {
-            ProductImage(product.emoji, Modifier.fillMaxWidth().aspectRatio(1f)) {
+            ProductImage(product.emoji, Modifier.fillMaxWidth().aspectRatio(1f), productId = product.id) {
                 Badge(
                     text = if (overdue) "Пора пополнить" else "Скоро закончится",
                     background = if (overdue) FreshColors.Pink else FreshColors.Teal,

@@ -218,6 +218,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.recommended(
                     onAdd = { onIntent(CartContract.Intent.Add(product.id)) },
                     onQuantityChange = { onIntent(CartContract.Intent.ChangeQuantity(product.id, it)) },
                     modifier = Modifier.weight(1f),
+                    productId = product.id,
                 )
             }
             repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -239,6 +240,7 @@ private fun CartRow(
             Modifier.size(76.dp).clickable { onOpenProduct(product.id) },
             emojiSize = 40.sp,
             shape = RoundedCornerShape(18.dp),
+            productId = product.id,
         )
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(product.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
