@@ -2,6 +2,7 @@ package ru.kaed.ozonfresh.presentation.catalog
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -152,12 +153,15 @@ fun CatalogScreen(
     LazyColumn(Modifier.fillMaxSize().background(FreshColors.Canvas)) {
         item(key = "header") { ShopHeader(state.address) }
         item(key = "search") {
-            ShopSection(onDark = true) {
+            ShopSection(onDark = true, contentPadding = 12.dp) {
                 SearchBar(
                     Modifier.padding(horizontal = padding),
                     value = state.query,
                     onValueChange = { onIntent(CatalogContract.Intent.Search(it)) },
                 )
+                if (state.query.isBlank()) {
+                    CategoryGrid(state, padding, onOpenCategory)
+                }
             }
         }
         when {
@@ -175,21 +179,28 @@ fun CatalogScreen(
                 productGrid(state.searchResults, columns, state, onIntent, onOpenProduct, padding, inSection = true)
             }
 
-            else -> item(key = "categories") {
-                ShopSection {
-                    SectionTitle("Продукты", Modifier.padding(horizontal = padding))
-                    state.categories.chunked(3).forEach { row ->
-                        Row(
-                            Modifier.padding(horizontal = padding).padding(top = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            row.forEach { item ->
-                                CategoryTile(item.title, item.emoji, { onOpenCategory(item.id) }, Modifier.weight(1f))
-                            }
-                            repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
+            else -> Unit
+        }
+    }
+}
+
+/** Плитки разделов как в каталоге приложения: первая строка — широкая плитка и узкая, дальше по три. */
+@Composable
+private fun CategoryGrid(state: CatalogContract.State, padding: Dp, onOpenCategory: (String) -> Unit) {
+    val first = state.categories.take(2)
+    val rest = state.categories.drop(2).chunked(3)
+    Column(Modifier.padding(horizontal = padding).padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            first.forEachIndexed { index, item ->
+                CategoryTile(item.title, item.emoji, { onOpenCategory(item.id) }, Modifier.weight(if (index == 0) 2f else 1f))
+            }
+        }
+        rest.forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { item ->
+                    CategoryTile(item.title, item.emoji, { onOpenCategory(item.id) }, Modifier.weight(1f))
                 }
+                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
@@ -209,8 +220,8 @@ private fun LazyListScope.productGrid(
         val last = index == rows.lastIndex
         Row(
             (if (inSection) Modifier.sectionPart(top = false, bottom = last) else Modifier)
-                .padding(start = padding, end = padding, bottom = if (last) 16.dp else 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(start = padding, end = padding, bottom = if (last) 16.dp else 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             row.forEach { product ->
                 ProductCard(

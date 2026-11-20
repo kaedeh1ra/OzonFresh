@@ -29,7 +29,7 @@ val LocalWindowSize = staticCompositionLocalOf { WindowSize.Wide }
 
 /** Боковой отступ контента: на телефоне меньше, чтобы не терять ширину. */
 val WindowSize.contentPadding: Dp
-    get() = if (this == WindowSize.Compact) 16.dp else 24.dp
+    get() = if (this == WindowSize.Compact) 10.dp else 24.dp
 
 val windowSize: WindowSize
     @Composable @ReadOnlyComposable

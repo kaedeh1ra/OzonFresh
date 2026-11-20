@@ -79,13 +79,17 @@ private val FreshShapes = Shapes(
 
 private val FreshTypography = Typography().run {
     copy(
-        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 30.sp),
-        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 26.sp),
-        titleLarge = titleLarge.copy(fontWeight = FontWeight.ExtraBold, fontSize = 22.sp),
-        titleMedium = titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 17.sp),
-        titleSmall = titleSmall.copy(fontWeight = FontWeight.Bold),
-        labelLarge = labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-        bodyLarge = bodyLarge.copy(fontSize = 16.sp),
+        // Размеры подогнаны по скриншотам приложения: оно плотнее стандартной шкалы Material.
+        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, lineHeight = 30.sp),
+        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, lineHeight = 26.sp),
+        titleLarge = titleLarge.copy(fontWeight = FontWeight.ExtraBold, fontSize = 19.sp, lineHeight = 24.sp),
+        titleMedium = titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp, lineHeight = 20.sp),
+        titleSmall = titleSmall.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp, lineHeight = 17.sp),
+        labelLarge = labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+        labelMedium = labelMedium.copy(fontSize = 11.sp),
+        bodyLarge = bodyLarge.copy(fontSize = 15.sp, lineHeight = 19.sp, letterSpacing = 0.sp),
+        bodyMedium = bodyMedium.copy(fontSize = 12.5.sp, lineHeight = 16.sp, letterSpacing = 0.sp),
+        bodySmall = bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
     )
 }
 

@@ -46,7 +46,7 @@ class HomeViewModel(
         observeFeed().onEach { setState { copy(feed = it) } }.launchIn(viewModelScope)
         observePurchased().onEach { setState { copy(purchased = it) } }.launchIn(viewModelScope)
         observeCart().onEach { cart ->
-            setState { copy(inCart = cart.items.associate { it.product.id to it.quantity }) }
+            setState { copy(inCart = cart.items.associate { it.product.id to it.quantity }, cartTotal = cart.itemsTotal) }
         }.launchIn(viewModelScope)
     }
 
@@ -68,6 +68,7 @@ class HomeViewModel(
 
             is Intent.Add -> addToCart(intent.productId)
             is Intent.ChangeQuantity -> changeQuantity(intent.productId, intent.quantity)
+            is Intent.NotInPrototype -> sendEffect(Effect.ShowMessage("«${intent.title}» в прототипе не работает"))
         }
     }
 }

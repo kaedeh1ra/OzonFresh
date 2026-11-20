@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 // Иконки нарисованы на Canvas: отдельная библиотека иконок ради нескольких штук не нужна.
 // Вкладки — залитые фигуры, как в нижней навигации референса; служебные (поиск, назад) — линиями.
 
-enum class NavIcon { Home, Products, Catalog, Cart, Profile, List, Search, Back, ChevronDown, Heart }
+enum class NavIcon { Home, Products, Catalog, Cart, Profile, List, Search, Back, ChevronDown, Close, Heart }
 
 @Composable
 fun NavIconView(icon: NavIcon, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp) {
@@ -45,6 +45,11 @@ fun NavIconView(icon: NavIcon, color: Color, modifier: Modifier = Modifier, size
                     lineTo(w * 0.62f, w * 0.8f)
                 }
                 drawPath(path, color, style = stroke)
+            }
+
+            NavIcon.Close -> {
+                drawLine(color, Offset(w * 0.22f, w * 0.22f), Offset(w * 0.78f, w * 0.78f), stroke.width, StrokeCap.Round)
+                drawLine(color, Offset(w * 0.78f, w * 0.22f), Offset(w * 0.22f, w * 0.78f), stroke.width, StrokeCap.Round)
             }
 
             NavIcon.ChevronDown -> {

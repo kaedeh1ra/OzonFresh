@@ -169,7 +169,7 @@ private fun DeliveryBar(cart: CartSummary) {
     Text(
         text,
         color = FreshColors.Muted,
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
         maxLines = 1,
         modifier = Modifier

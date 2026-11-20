@@ -28,9 +28,13 @@ import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import ru.kaed.ozonfresh.domain.model.Product
 import ru.kaed.ozonfresh.domain.model.rub
+import ru.kaed.ozonfresh.domain.usecase.shop.FREE_DELIVERY_FROM
 import ru.kaed.ozonfresh.navigation.AppNavigator
 import ru.kaed.ozonfresh.navigation.Destinations
-import ru.kaed.ozonfresh.presentation.designsystem.components.CategoryIcon
+import ru.kaed.ozonfresh.presentation.designsystem.components.CategoryTile
+import ru.kaed.ozonfresh.presentation.designsystem.components.CouponCard
+import ru.kaed.ozonfresh.presentation.designsystem.components.PromoBanner
+import ru.kaed.ozonfresh.presentation.designsystem.components.PromoStory
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductCard
 import ru.kaed.ozonfresh.presentation.designsystem.components.SearchBar
 import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
@@ -90,19 +94,50 @@ fun HomeScreen(
     val columns = windowSize.gridColumns
     LazyColumn(Modifier.fillMaxSize().background(FreshColors.Canvas), contentPadding = PaddingValues(bottom = 8.dp)) {
         // Долгое нажатие на адрес — вход в демо-панель для защиты.
-        item(key = "header") { ShopHeader(state.address, onLongPress = onOpenDemo) }
+        item(key = "header") { ShopHeader(state.address, onOpenDemo = onOpenDemo) }
 
         item(key = "top") {
-            ShopSection(onDark = true) {
+            ShopSection(onDark = true, contentPadding = 12.dp) {
                 SearchBar(Modifier.padding(horizontal = padding), onClick = onOpenSearch)
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = padding - 8.dp),
-                    modifier = Modifier.padding(top = 16.dp),
+                    contentPadding = PaddingValues(horizontal = padding - 6.dp),
+                    modifier = Modifier.padding(top = 12.dp),
                 ) {
-                    items(state.categories, key = { it.id }) { category ->
-                        CategoryIcon(category.emoji, category.title, onClick = { onOpenCategory(category.id) })
+                    items(PROMO_STORIES, key = { it.second }) { (emoji, title) ->
+                        PromoStory(emoji, title, onClick = { onIntent(Intent.NotInPrototype(title.replace("\n", " "))) })
                     }
                 }
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = padding),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 10.dp),
+                ) {
+                    items(state.categories, key = { it.id }) { category ->
+                        CategoryTile(category.title, category.emoji, { onOpenCategory(category.id) }, Modifier.width(124.dp))
+                    }
+                }
+                PromoBanner(
+                    title = "Активируйте скидку",
+                    subtitle = "На три покупки в приложении",
+                    badge = "−30%",
+                    onClick = { onIntent(Intent.NotInPrototype("Активируйте скидку")) },
+                    modifier = Modifier.padding(start = padding, end = padding, top = 12.dp),
+                )
+            }
+        }
+
+        item(key = "coupon") {
+            ShopSection(contentPadding = 12.dp) {
+                val left = FREE_DELIVERY_FROM - state.cartTotal
+                CouponCard(
+                    emoji = "🚚",
+                    title = "Доставка 0 ₽",
+                    description = "Закажите от ${FREE_DELIVERY_FROM.rub()} — привезём бесплатно",
+                    chip = "КАЖДЫЙ ДЕНЬ",
+                    remaining = if (left > 0) "Ещё ${left.rub()}" else "Готово!",
+                    progress = state.cartTotal.toFloat() / FREE_DELIVERY_FROM,
+                    modifier = Modifier.padding(horizontal = padding),
+                )
             }
         }
 
@@ -129,7 +164,7 @@ fun HomeScreen(
                     SectionTitle("Вы покупали", Modifier.padding(horizontal = padding))
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = padding),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 14.dp),
                     ) {
                         items(state.purchased, key = { it.id }) { product ->
@@ -150,8 +185,8 @@ fun HomeScreen(
         itemsIndexed(rows, key = { _, row -> "hits-" + row.first().id }) { index, row ->
             Row(
                 Modifier.sectionPart(top = false, bottom = index == rows.lastIndex)
-                    .padding(start = padding, end = padding, bottom = if (index == rows.lastIndex) 16.dp else 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(start = padding, end = padding, bottom = if (index == rows.lastIndex) 16.dp else 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 row.forEach { product ->
                     ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.weight(1f))
@@ -161,6 +196,16 @@ fun HomeScreen(
         }
     }
 }
+
+/** Ряд «историй» как в приложении: в прототипе это витрина, разделы за ними не сделаны. */
+private val PROMO_STORIES = listOf(
+    "🏷️" to "Все скидки\nи акции",
+    "⭐" to "Вкусные\nновинки",
+    "🛍️" to "Прошлые\nпокупки",
+    "⏰" to "Съешьте\nскорее",
+    "💖" to "Любимые\nтовары",
+    "❓" to "Вопросы\nи ответы",
+)
 
 @Composable
 private fun ShopProductCard(

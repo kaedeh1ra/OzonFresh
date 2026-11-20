@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ru.kaed.ozonfresh.domain.model.Day
 import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.replenishment.ReplenishmentItem
@@ -37,7 +38,7 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
 import ru.kaed.ozonfresh.presentation.designsystem.components.ShopSection
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
-private val CARD_WIDTH = 176.dp
+private val CARD_WIDTH = 156.dp
 
 /**
  * Блок «Пора пополнить»: белая секция выше обычных подборок. Только подсказки: «Добавить» кладёт
@@ -63,8 +64,8 @@ internal fun ReplenishmentBlock(
         )
         LazyRow(
             contentPadding = PaddingValues(horizontal = horizontalPadding),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(top = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(top = 12.dp),
         ) {
             items(items, key = { it.product.id }) { item ->
                 ReplenishmentCard(
@@ -107,7 +108,7 @@ private fun ReplenishmentCard(
             Text(
                 product.price.rub(),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 4.dp, top = 10.dp),
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp),
             )
             Text(
                 "Берёте раз в ${item.forecast.intervalDays} дн.",
@@ -126,12 +127,12 @@ private fun ReplenishmentCard(
                 onClick = onAdd,
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.padding(top = 10.dp).fillMaxWidth().height(44.dp),
+                modifier = Modifier.padding(top = 8.dp).fillMaxWidth().height(38.dp),
             ) {
                 Text("Добавить")
             }
         } else {
-            QuantityStepper(quantity, onQuantityChange, Modifier.padding(top = 10.dp).fillMaxWidth(), height = 44.dp)
+            QuantityStepper(quantity, onQuantityChange, Modifier.padding(top = 8.dp).fillMaxWidth(), height = 38.dp)
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -146,8 +147,8 @@ private fun SmallAction(text: String, onClick: () -> Unit) {
     TextButton(
         onClick = onClick,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-        modifier = Modifier.height(40.dp),
+        modifier = Modifier.height(36.dp),
     ) {
-        Text(text, color = FreshColors.Muted, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+        Text(text, color = FreshColors.Muted, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), fontWeight = FontWeight.SemiBold)
     }
 }

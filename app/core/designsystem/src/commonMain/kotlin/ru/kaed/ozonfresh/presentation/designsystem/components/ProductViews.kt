@@ -82,7 +82,7 @@ private fun StepperButton(symbol: String, label: String, size: Dp, onClick: () -
 
 /** Белая круглая кнопка с корзиной поверх картинки товара. */
 @Composable
-fun BasketButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 48.dp) {
+fun BasketButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 44.dp) {
     Box(
         modifier.size(size).shadow(6.dp, CircleShape).clip(CircleShape).background(FreshColors.White)
             .clickable(role = Role.Button, onClickLabel = "В корзину", onClick = onClick),
@@ -144,8 +144,8 @@ fun ProductCard(
             NavIconView(
                 NavIcon.Heart,
                 FreshColors.Line,
-                Modifier.align(Alignment.TopEnd).padding(10.dp),
-                size = 26.dp,
+                Modifier.align(Alignment.TopEnd).padding(8.dp),
+                size = 22.dp,
             )
             if (quantity == 0) {
                 BasketButton(onAdd, Modifier.align(Alignment.BottomEnd).padding(8.dp))
@@ -160,7 +160,7 @@ fun ProductCard(
         Text(
             price,
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(start = 4.dp, top = 10.dp),
+            modifier = Modifier.padding(start = 4.dp, top = 8.dp),
         )
         if (tag != null) {
             Text(

@@ -204,8 +204,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.recommended(
         val last = index == rows.lastIndex
         Row(
             Modifier.sectionPart(top = false, bottom = last)
-                .padding(start = padding, end = padding, bottom = if (last) 16.dp else 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(start = padding, end = padding, bottom = if (last) 16.dp else 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             row.forEach { product ->
                 ProductCard(

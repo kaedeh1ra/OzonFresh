@@ -16,6 +16,8 @@ object HomeContract {
         val hits: List<Product> = emptyList(),
         /** Сколько штук каждого товара в корзине: карточки показывают степпер вместо «+». */
         val inCart: Map<String, Int> = emptyMap(),
+        /** Сумма товаров в корзине: купон «Доставка 0 ₽» показывает, сколько осталось. */
+        val cartTotal: Int = 0,
     ) {
         /** Что видит клиент: в контрольной группе A/B-теста блока нет. */
         val visibleFeed: List<ReplenishmentItem> get() = feed?.visible.orEmpty()
@@ -29,6 +31,9 @@ object HomeContract {
         data class Later(val item: ReplenishmentItem) : Intent
         data class Add(val productId: String) : Intent
         data class ChangeQuantity(val productId: String, val quantity: Int) : Intent
+
+        /** Промо-блок магазина, которого нет в прототипе: показываем подсказку. */
+        data class NotInPrototype(val title: String) : Intent
     }
 
     sealed interface Effect {
