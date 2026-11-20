@@ -32,7 +32,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "KmpTemplate"
+rootProject.name = "OzonFresh"
 
 include(":app:shared")
 include(":app:androidApp")

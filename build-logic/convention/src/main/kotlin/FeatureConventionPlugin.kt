@@ -1,6 +1,6 @@
-import com.example.app.buildlogic.Constants
-import com.example.app.buildlogic.library
-import com.example.app.buildlogic.libs
+import ru.kaed.ozonfresh.buildlogic.Constants
+import ru.kaed.ozonfresh.buildlogic.library
+import ru.kaed.ozonfresh.buildlogic.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure

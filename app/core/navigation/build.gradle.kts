@@ -1,4 +1,4 @@
-import com.example.app.buildlogic.Constants
+import ru.kaed.ozonfresh.buildlogic.Constants
 
 plugins {
     id("kmp.compose")

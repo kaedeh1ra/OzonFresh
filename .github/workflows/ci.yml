@@ -51,27 +51,3 @@ jobs:
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
             ARCHS=arm64 CODE_SIGNING_ALLOWED=NO build
-
-  # Только в самом шаблоне: переименование не должно ломать сборку.
-  rename-smoke:
-    if: github.event.repository.is_template
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - uses: gradle/actions/setup-gradle@v4
-
-      - name: Rename to a test package and build
-        run: |
-          # До chmod: смена прав сделала бы рабочую копию «грязной», и rename отказался бы работать.
-          bash ./rename.sh --package io.github.test.smoke_app --name SmokeApp --display-name "Smoke App"
-          chmod +x gradlew
-          ./gradlew testAndroidHostTest jvmTest \
-            :app:androidApp:assembleDebug \
-            :app:webApp:wasmJsBrowserDistribution \
-            :app:desktopApp:createDistributable --no-daemon

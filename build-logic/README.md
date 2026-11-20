@@ -15,12 +15,12 @@
 ## Константы сборки
 
 Базовый пакет, версия JVM, Android SDK и пути постоянных модулей лежат в
-[`Constants.kt`](./settings/src/main/kotlin/com/example/app/buildlogic/Constants.kt). Их используют
+[`Constants.kt`](./settings/src/main/kotlin/ru/kaed/ozonfresh/buildlogic/Constants.kt). Их используют
 convention-плагины и обычные скрипты; в любом `build.gradle.kts` они подключаются через
-`import com.example.app.buildlogic.Constants`.
+`import ru.kaed.ozonfresh.buildlogic.Constants`.
 
 ```kotlin
-const val BASE_PACKAGE = "com.example.app" // корневой пакет, namespace и applicationId
+const val BASE_PACKAGE = "ru.kaed.ozonfresh" // корневой пакет, namespace и applicationId
 const val JVM_VERSION = 21                 // байткод всех модулей: Kotlin jvmTarget и Java compileOptions
 const val COMPILE_SDK = 37
 const val TARGET_SDK = 37
@@ -28,7 +28,7 @@ const val MIN_SDK = 31
 ```
 
 Android namespace каждого модуля выводится из его пути: `:app:core:domain` →
-`com.example.app.core.domain`.
+`ru.kaed.ozonfresh.core.domain`.
 
 Gradle-скрипты не видят только JDK, на которой идёт сама сборка. Повышая `JVM_VERSION`, поменяйте и
 её: `java-version` в `.github/workflows/ci.yml` и `gradle/gradle-daemon-jvm.properties`
@@ -62,12 +62,12 @@ convention-плагинами, те не нашли бы свои типы.
 вне новой папки и не перезаписывает существующую фичу.
 
 Соглашение, на котором держится реестр: фича `files-check` объявляет `val filesCheckFeatureModule` в
-пакете `com.example.app.presentation.filescheck`. Если имя другое, сборка `shared` упадёт на
+пакете `ru.kaed.ozonfresh.presentation.filescheck`. Если имя другое, сборка `shared` упадёт на
 сгенерированном `FeatureRegistry.kt` с понятной ошибкой «Unresolved reference».
 
 Если на экран фичи нужно ссылаться из другой фичи, его маршрут переносится в
 [
-`Destinations`](../app/core/navigation/src/commonMain/kotlin/com/example/app/navigation/Destinations.kt).
+`Destinations`](../app/core/navigation/src/commonMain/kotlin/ru/kaed/ozonfresh/navigation/Destinations.kt).
 Если нужен её UI или логика, в `core/navigation` объявляется интерфейс, фича кладёт реализацию в
 свой Koin-модуль, другие получают его через `koinInject()`. Зависимость фичи на фичу запрещена:
 `kmp.feature` её не даёт, и это держит модули независимыми.

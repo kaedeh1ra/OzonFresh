@@ -1,6 +1,6 @@
-import com.example.app.buildlogic.FeatureLayout
-import com.example.app.buildlogic.FeatureName
-import com.example.app.buildlogic.FeatureTemplates
+import ru.kaed.ozonfresh.buildlogic.FeatureLayout
+import ru.kaed.ozonfresh.buildlogic.FeatureName
+import ru.kaed.ozonfresh.buildlogic.FeatureTemplates
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin

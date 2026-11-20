@@ -1,4 +1,4 @@
-import com.example.app.buildlogic.FeatureLayout
+import ru.kaed.ozonfresh.buildlogic.FeatureLayout
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 

@@ -1,5 +1,5 @@
-import com.example.app.buildlogic.Constants
-import com.example.app.buildlogic.FeatureLayout
+import ru.kaed.ozonfresh.buildlogic.Constants
+import ru.kaed.ozonfresh.buildlogic.FeatureLayout
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project

@@ -1,4 +1,4 @@
-import com.example.app.buildlogic.Constants
+import ru.kaed.ozonfresh.buildlogic.Constants
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -33,7 +33,7 @@ val apiBaseUrl = providers.gradleProperty("apiBaseUrl").orElse("https://example.
 
 compose.desktop {
     application {
-        mainClass = "com.example.app.desktop.MainKt"
+        mainClass = "ru.kaed.ozonfresh.desktop.MainKt"
         jvmArgs += "-Dapp.apiBaseUrl=$apiBaseUrl"
 
         nativeDistributions {
