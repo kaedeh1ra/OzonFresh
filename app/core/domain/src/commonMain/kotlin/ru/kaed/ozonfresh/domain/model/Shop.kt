@@ -19,7 +19,18 @@ data class Product(
     val price: Int,
     val emoji: String,
     val description: String = "",
+    /** Оценка и число отзывов для карточки витрины; на ленту и расчёты не влияют. */
+    val rating: Double? = null,
+    val reviews: Int? = null,
+    /** Зачёркнутая цена на витрине. Покупают по [price]: «Пора пополнить» и корзина скидок не знают. */
+    val oldPrice: Int? = null,
+    /** Метка «Новинка» на витрине. */
+    val isNew: Boolean = false,
 )
+
+/** Скидка в процентах для бейджа «−21%»; null — цена без зачёркнутой. */
+val Product.discountPercent: Int?
+    get() = oldPrice?.takeIf { it > price }?.let { 100 - price * 100 / it }
 
 enum class PurchaseStatus {
     /** Клиент получил товар: только такие покупки учитывает «Пора пополнить». */

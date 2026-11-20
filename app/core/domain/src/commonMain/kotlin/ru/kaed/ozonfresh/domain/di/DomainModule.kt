@@ -14,7 +14,6 @@ import ru.kaed.ozonfresh.domain.usecase.shop.AddToCartUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ChangeCartQuantityUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.GetCatalogUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ObserveCartUseCase
-import ru.kaed.ozonfresh.domain.usecase.shop.ObservePurchasedProductsUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ObserveTodayUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.PlaceOrderUseCase
 
@@ -30,7 +29,6 @@ val domainModule = module {
     factoryOf(::LaterUseCase)
 
     factoryOf(::GetCatalogUseCase)
-    factoryOf(::ObservePurchasedProductsUseCase)
     factoryOf(::ObserveCartUseCase)
     factoryOf(::AddToCartUseCase)
     factoryOf(::ChangeCartQuantityUseCase)

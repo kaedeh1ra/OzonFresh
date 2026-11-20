@@ -13,7 +13,6 @@ import ru.kaed.ozonfresh.domain.usecase.shop.AddToCartUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ChangeCartQuantityUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.GetCatalogUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ObserveCartUseCase
-import ru.kaed.ozonfresh.domain.usecase.shop.ObservePurchasedProductsUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ObserveTodayUseCase
 import ru.kaed.ozonfresh.presentation.home.HomeContract.Effect
 import ru.kaed.ozonfresh.presentation.home.HomeContract.Intent
@@ -24,7 +23,6 @@ class HomeViewModel(
     catalog: GetCatalogUseCase,
     today: ObserveTodayUseCase,
     observeFeed: ObserveReplenishmentFeedUseCase,
-    observePurchased: ObservePurchasedProductsUseCase,
     observeCart: ObserveCartUseCase,
     private val registerImpression: RegisterFeedImpressionUseCase,
     private val addFromFeed: AddFromFeedUseCase,
@@ -37,14 +35,15 @@ class HomeViewModel(
         address = today.address,
         today = today().value,
         categories = catalog.categories,
-        hits = catalog.weeklyHits,
+        products = (catalog.weeklyHits + catalog.products).distinctBy { it.id },
+        weeklySale = catalog.products.filter { it.oldPrice != null },
+        novelties = catalog.products.filter { it.isNew },
     ),
 ) {
 
     init {
         today().onEach { setState { copy(today = it) } }.launchIn(viewModelScope)
         observeFeed().onEach { setState { copy(feed = it) } }.launchIn(viewModelScope)
-        observePurchased().onEach { setState { copy(purchased = it) } }.launchIn(viewModelScope)
         observeCart().onEach { cart ->
             setState { copy(inCart = cart.items.associate { it.product.id to it.quantity }, cartTotal = cart.itemsTotal) }
         }.launchIn(viewModelScope)

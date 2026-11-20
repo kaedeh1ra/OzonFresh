@@ -96,6 +96,19 @@ object MockShopData {
         at("sponges", "2026-09-20")
     }
 
+    /** Новинки витрины: подборка «Новинки» на главной. */
+    private val NEW_IDS get() = setOf("avocado", "cottage", "kefir", "capsules", "oats", "butter")
+
+    /** Зачёркнутые цены на витрине: у части хитов, как скидки в приложении. Функция, а не поле: её зовут при инициализации [products]. */
+    private fun oldPriceOf(id: String): Int? = when (id) {
+        "croissant" -> 219
+        "cheese" -> 279
+        "tea" -> 299
+        "apples" -> 189
+        "yogurt" -> 79
+        else -> null
+    }
+
     private fun product(
         id: String,
         name: String,
@@ -104,7 +117,17 @@ object MockShopData {
         price: Int,
         emoji: String,
         description: String = "",
-    ) = Product(id, name, category, unit, price, emoji, description)
+    ): Product {
+        // Оценка и отзывы стабильны для товара: выводятся из id, а не случайны.
+        val seed = id.fold(7) { acc, c -> acc * 31 + c.code }.let { if (it < 0) -it else it }
+        return Product(
+            id, name, category, unit, price, emoji, description,
+            rating = 4.5 + (seed % 5) / 10.0,
+            reviews = 300 + seed % 25_000,
+            oldPrice = oldPriceOf(id),
+            isNew = id in NEW_IDS,
+        )
+    }
 }
 
 /** Строки истории по товарам; номера заказов раздаются по датам: всё купленное в один день — один заказ. */

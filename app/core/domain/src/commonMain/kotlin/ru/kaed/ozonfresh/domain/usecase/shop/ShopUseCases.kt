@@ -41,20 +41,6 @@ class GetCatalogUseCase(private val catalog: CatalogRepository) {
     fun product(id: String): Product? = catalog.product(id)
 }
 
-/** «Вы покупали»: что клиент получал чаще всего. */
-class ObservePurchasedProductsUseCase(
-    private val catalog: CatalogRepository,
-    private val purchases: PurchaseRepository,
-) {
-    operator fun invoke(limit: Int = 10): Flow<List<Product>> = purchases.purchases.map { history ->
-        history.filter { it.status == PurchaseStatus.DELIVERED }
-            .groupingBy { it.productId }.eachCount()
-            .entries.sortedByDescending { it.value }
-            .mapNotNull { catalog.product(it.key) }
-            .take(limit)
-    }
-}
-
 class ObserveCartUseCase(
     private val cart: CartRepository,
     private val catalog: CatalogRepository,

@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.DrawableResource
 
 /** Плитка сетки разделов: квадрат 123 dp на телефоне, промежуток 4 dp, края 8 dp — как в каталоге приложения. */
 val TILE_GRID_CELL = 123.dp
@@ -15,7 +16,14 @@ val TILE_GRID_GAP = 4.dp
 val TILE_GRID_EDGE = 8.dp
 
 /** Плитка в сетке: [cols] × [rows] клеток — обычная, широкая или высокая. */
-class TileCell(val title: String, val emoji: String, val cols: Int, val rows: Int, val onClick: () -> Unit)
+class TileCell(
+    val title: String,
+    val emoji: String,
+    val cols: Int,
+    val rows: Int,
+    val photo: DrawableResource? = tilePhoto(title),
+    val onClick: () -> Unit,
+)
 
 /**
  * Сетка плиток с широкими и высокими: плитки укладываются плотно, слева направо и сверху вниз.
@@ -28,12 +36,12 @@ fun TileGrid(allCells: List<TileCell>, modifier: Modifier = Modifier, columns: I
     val columns = columns
         ?: ((width - TILE_GRID_EDGE * 2 + TILE_GRID_GAP) / (TILE_GRID_CELL + TILE_GRID_GAP)).toInt().coerceAtLeast(3)
     // На широком экране секция помещается в одну строку: высокая плитка оставила бы под соседями пустоту.
-    val cells = if (columns > 3) allCells.map { TileCell(it.title, it.emoji, it.cols, 1, it.onClick) } else allCells
+    val cells = if (columns > 3) allCells.map { TileCell(it.title, it.emoji, it.cols, 1, it.photo, it.onClick) } else allCells
     val placement = remember(cells, columns) { pack(cells, columns) }
     Layout(
         content = {
             cells.forEach { c ->
-                CategoryTile(c.title, c.emoji, c.onClick, emojiSize = if (c.rows > 1) 80 else 64)
+                CategoryTile(c.title, c.emoji, c.onClick, emojiSize = if (c.rows > 1) 80 else 64, photo = c.photo)
             }
         },
         modifier = modifier.fillMaxWidth().padding(horizontal = TILE_GRID_EDGE),

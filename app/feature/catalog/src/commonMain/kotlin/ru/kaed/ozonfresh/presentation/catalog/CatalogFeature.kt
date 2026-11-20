@@ -36,6 +36,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 import ru.kaed.ozonfresh.domain.model.Category
 import ru.kaed.ozonfresh.domain.model.Product
+import ru.kaed.ozonfresh.domain.model.discountPercent
 import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.usecase.shop.AddToCartUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ChangeCartQuantityUseCase
@@ -67,6 +68,7 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.TileCell
 import ru.kaed.ozonfresh.presentation.designsystem.components.TileGrid
 import ru.kaed.ozonfresh.presentation.designsystem.components.productColumns
 import ru.kaed.ozonfresh.presentation.designsystem.components.sectionPart
+import ru.kaed.ozonfresh.presentation.designsystem.components.tilePhoto
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.mvi.MviViewModel
 
@@ -198,7 +200,7 @@ fun CatalogScreen(
             }
             CATALOG_SECTIONS.forEach { section ->
                 val cells = section.tiles.mapNotNull { tile ->
-                    byId[tile.id]?.let { c -> TileCell(c.title, c.emoji, tile.cols, tile.rows) { onOpenCategory(c.id) } }
+                    byId[tile.id]?.let { c -> TileCell(c.title, c.emoji, tile.cols, tile.rows, tilePhoto(c.id)) { onOpenCategory(c.id) } }
                 }
                 if (cells.isNotEmpty()) {
                     item(key = "section-" + section.title) {
@@ -230,7 +232,7 @@ fun CatalogScreen(
 private class TileSpec(val id: String, val cols: Int = 1, val rows: Int = 1)
 
 private class PromoSpec(val title: String, val emoji: String, val cols: Int = 1) {
-    fun toCell(onClick: () -> Unit) = TileCell(title, emoji, cols, 1, onClick)
+    fun toCell(onClick: () -> Unit) = TileCell(title, emoji, cols, 1, onClick = onClick)
 }
 
 private class CatalogSection(val title: String, val tiles: List<TileSpec>)
@@ -282,6 +284,10 @@ private fun LazyListScope.productGrid(
                     onQuantityChange = { onIntent(CatalogContract.Intent.ChangeQuantity(product.id, it)) },
                     modifier = Modifier.weight(1f),
                     productId = product.id,
+                    oldPrice = product.oldPrice?.rub(),
+                    discountPercent = product.discountPercent,
+                    rating = product.rating,
+                    reviews = product.reviews,
                 )
             }
             repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }

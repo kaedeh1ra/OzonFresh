@@ -31,6 +31,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import ru.kaed.ozonfresh.domain.model.Product
+import ru.kaed.ozonfresh.domain.model.discountPercent
 import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.usecase.shop.AddToCartUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ChangeCartQuantityUseCase
@@ -240,6 +241,10 @@ fun ReadyScreen(
                         onQuantityChange = { onIntent(ReadyContract.Intent.ChangeQuantity(product.id, it)) },
                         modifier = Modifier.weight(1f),
                         productId = product.id,
+                        oldPrice = product.oldPrice?.rub(),
+                        discountPercent = product.discountPercent,
+                        rating = product.rating,
+                        reviews = product.reviews,
                     )
                 }
                 repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }

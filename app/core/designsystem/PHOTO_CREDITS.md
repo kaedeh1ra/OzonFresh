@@ -32,3 +32,50 @@
 | `product_tomatoes.jpg` | Томаты черри | [Tomates cerises Luc Viatour.jpg](https://commons.wikimedia.org/wiki/File:Tomates_cerises_Luc_Viatour.jpg) | Luc Viatour | [CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0/) |
 | `product_water.jpg` | Вода | [Plastic Water Bottle.jpg](https://commons.wikimedia.org/wiki/File:Plastic_Water_Bottle.jpg) | Kykywinks | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | `product_yogurt.jpg` | Йогурт | [Yoghurt and spoon.jpg](https://commons.wikimedia.org/wiki/File:Yoghurt_and_spoon.jpg) | Julikalucky | [CC0](http://creativecommons.org/publicdomain/zero/1.0/deed.en) |
+
+## Картинки плиток
+
+Предметы без фона для плиток разделов и подборок взяты с [pngimg.com](https://pngimg.com/), лицензия сайта —
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/): только некоммерческое использование, со ссылкой
+на источник. Прозрачные поля обрезаны, картинки уменьшены до 480 px по большей стороне и сохранены в WebP.
+Подходят для учебного прототипа; для коммерческого приложения их нужно заменить.
+
+| Файл | Плитка | Оригинал |
+|---|---|---|
+| `tile_dairy.webp` | Молочное | [milk_PNG12693.png](https://pngimg.com/uploads/milk/milk_PNG12693.png) |
+| `tile_bakery.webp` | Хлеб | [bread_PNG2217.png](https://pngimg.com/uploads/bread/bread_PNG2217.png) |
+| `tile_fruits.webp` | Овощи и фрукты | [basket_PNG30.png](https://pngimg.com/uploads/basket/basket_PNG30.png) |
+| `tile_grocery.webp` | Бакалея | [spaghetti_PNG73.png](https://pngimg.com/uploads/spaghetti/spaghetti_PNG73.png) |
+| `tile_drinks.webp` | Вода и напитки | [water_bottle_PNG10151.png](https://pngimg.com/uploads/water_bottle/water_bottle_PNG10151.png) |
+| `tile_coffee.webp` | Кофе и чай | [coffee_jar_PNG17085.png](https://pngimg.com/uploads/coffee_jar/coffee_jar_PNG17085.png) |
+| `tile_pets.webp` | Для животных | [dog_food_PNG43.png](https://pngimg.com/uploads/dog_food/dog_food_PNG43.png) |
+| `tile_household.webp` | Дом | [sponge_bath_PNG7.png](https://pngimg.com/uploads/sponge_bath/sponge_bath_PNG7.png) |
+| `tile_hits.webp` | Хиты недели | [france_PNG40.png](https://pngimg.com/uploads/france/france_PNG40.png) |
+| `tile_new.webp` | Новинки | [avocado_PNG15496.png](https://pngimg.com/uploads/avocado/avocado_PNG15496.png) |
+| `tile_healthy.webp` | Здоровое питание | [broccoli_PNG2822.png](https://pngimg.com/uploads/broccoli/broccoli_PNG2822.png) |
+| `tile_sale.webp` | Скидки | [cheese_PNG16.png](https://pngimg.com/uploads/cheese/cheese_PNG16.png) |
+| `tile_eatsoon.webp` | Съешьте скорее | [tomato_PNG12594.png](https://pngimg.com/uploads/tomato/tomato_PNG12594.png) |
+| `tile_dishes.webp` | Блюда | [hot_dog_PNG10190.png](https://pngimg.com/uploads/hot_dog/hot_dog_PNG10190.png) |
+| `tile_hotdrinks.webp` | Напитки | [cappuccino_PNG13.png](https://pngimg.com/uploads/cappuccino/cappuccino_PNG13.png) |
+| `tile_taste.webp` | Найдите свой вкус | [noodle_PNG11.png](https://pngimg.com/uploads/noodle/noodle_PNG11.png) |
+| `tile_combo.webp` | Комбо | [cutlet_PNG28.png](https://pngimg.com/uploads/cutlet/cutlet_PNG28.png) |
+| `tile_breakfast.webp` | Завтраки | [breakfast_PNG6.png](https://pngimg.com/uploads/breakfast/breakfast_PNG6.png) |
+| `tile_mains.webp` | Вторые блюда | [spaghetti_PNG107.png](https://pngimg.com/uploads/spaghetti/spaghetti_PNG107.png) |
+| `tile_street.webp` | Стритфуд | [burger_sandwich_PNG4129.png](https://pngimg.com/uploads/burger_sandwich/burger_sandwich_PNG4129.png) |
+| `tile_soups.webp` | Супы | [ukraine_PNG53.png](https://pngimg.com/uploads/ukraine/ukraine_PNG53.png) |
+| `tile_salads.webp` | Закуски и салаты | [lettuce_PNG26.png](https://pngimg.com/uploads/lettuce/lettuce_PNG26.png) |
+| `tile_desserts.webp` | Десерты | [chocolate_cake_PNG41.png](https://pngimg.com/uploads/chocolate_cake/chocolate_cake_PNG41.png) |
+
+## Картинки «историй»
+
+3D-эмодзи из [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji), лицензия
+[MIT](https://github.com/microsoft/fluentui-emoji/blob/main/LICENSE), © Microsoft Corporation. Сохранены в WebP, 256×256.
+
+| Файл | История | Эмодзи |
+|---|---|---|
+| `story_sale.webp` | Все скидки и акции | Label |
+| `story_new.webp` | Вкусные новинки | Glowing star |
+| `story_past.webp` | Прошлые покупки | Shopping bags |
+| `story_soon.webp` | Съешьте скорее | Banana |
+| `story_fav.webp` | Любимые товары | Sparkling heart |
+| `story_faq.webp` | Вопросы и ответы | Red question mark |

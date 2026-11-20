@@ -2,14 +2,17 @@ package ru.kaed.ozonfresh.presentation.designsystem.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,12 +37,19 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
+import ru.kaed.ozonfresh.presentation.designsystem.theme.DarkPalette
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
 // Каркас экранов магазина: тёмная шапка с адресом, под ней белые скруглённые секции на сером фоне.
@@ -76,7 +86,12 @@ fun ShopHeader(address: String, onOpenDemo: (() -> Unit)? = null, modifier: Modi
         AppMark(Modifier.offset(x = 16.dp, y = 12.dp))
         val textStart = Modifier.padding(start = 56.dp, end = if (onOpenDemo != null) 64.dp else 16.dp)
         Text(
-            "fresh  •  $DELIVERY_ETA",
+            // Как в приложении: точка серая и с одинарными пробелами.
+            buildAnnotatedString {
+                append("fresh ")
+                withStyle(SpanStyle(color = FreshColors.NavInactive)) { append("•") }
+                append(" $DELIVERY_ETA")
+            },
             color = FreshColors.White,
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.5.sp, lineHeight = 16.sp),
             maxLines = 1,
@@ -140,7 +155,7 @@ fun Modifier.sectionPart(top: Boolean, bottom: Boolean, onDark: Boolean = false)
         .background(behind)
         .padding(bottom = if (bottom) SECTION_GAP else 0.dp)
         .clip(shape)
-        .background(FreshColors.White)
+        .background(FreshColors.Surface)
 }
 
 /** Целая белая секция, когда она помещается в один элемент списка. */
@@ -167,7 +182,7 @@ fun SheetScreen(modifier: Modifier = Modifier, content: @Composable ColumnScope.
     Column(Modifier.fillMaxSize().padding(top = 8.dp)) {
         Column(
             modifier.fillMaxSize().clip(RoundedCornerShape(topStart = SECTION_RADIUS, topEnd = SECTION_RADIUS))
-                .background(FreshColors.White)
+                .background(FreshColors.Surface)
                 .navigationBarsPadding()
                 .imePadding(),
             content = content,
@@ -226,13 +241,18 @@ val STORY_ROW_START = 8.dp
 
 /** «История» в ряду под поиском: картинка 47 dp на светлой подложке и подпись в две строки. */
 @Composable
-fun PromoStory(emoji: String, title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun PromoStory(emoji: String, title: String, onClick: () -> Unit, modifier: Modifier = Modifier, image: DrawableResource? = null) {
     Column(
         modifier.width(STORY_WIDTH).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(Modifier.size(47.dp).clip(RoundedCornerShape(12.dp)).background(FreshColors.Card), contentAlignment = Alignment.Center) {
-            Text(emoji, fontSize = 28.sp)
+            // Объёмная картинка, как иконки историй в приложении; без неё — эмодзи.
+            if (image != null) {
+                Image(painterResource(image), contentDescription = null, modifier = Modifier.size(42.dp))
+            } else {
+                Text(emoji, fontSize = 34.sp)
+            }
         }
         Text(
             title,
@@ -252,17 +272,39 @@ val TILE_GAP = 6.5.dp
 
 /** Плитка раздела: название сверху слева, картинка снизу справа. В ряду под поиском и в каталоге. */
 @Composable
-fun CategoryTile(title: String, emoji: String, onClick: () -> Unit, modifier: Modifier = Modifier, emojiSize: Int = 56) {
+fun CategoryTile(
+    title: String,
+    emoji: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    emojiSize: Int = 56,
+    photo: DrawableResource? = null,
+) {
     Box(
         modifier.clip(RoundedCornerShape(18.dp)).background(FreshColors.Card).clickable(onClick = onClick),
     ) {
+        if (photo != null) {
+            // Предмет без фона крупно в правом нижнем углу и чуть заходит за край плитки, как в приложении.
+            BoxWithConstraints(Modifier.matchParentSize()) {
+                val side = minOf(maxWidth, maxHeight - 22.dp) * 0.95f
+                Image(
+                    painterResource(photo),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    alignment = Alignment.BottomEnd,
+                    modifier = Modifier.align(Alignment.BottomEnd).offset(x = side * 0.06f, y = side * 0.05f).size(side),
+                )
+            }
+        }
         Text(
             title,
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 13.sp, lineHeight = 13.8.sp),
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(start = 8.dp, end = 6.dp).paddingFromBaseline(top = 18.dp),
         )
-        Text(emoji, fontSize = emojiSize.sp, modifier = Modifier.align(Alignment.BottomEnd).padding(end = 4.dp, bottom = 2.dp))
+        if (photo == null) {
+            Text(emoji, fontSize = emojiSize.sp, modifier = Modifier.align(Alignment.BottomEnd).padding(end = 4.dp, bottom = 2.dp))
+        }
     }
 }
 
@@ -291,7 +333,7 @@ fun PromoBanner(title: String, subtitle: String, badge: String, onClick: () -> U
         )
         Text(
             badge,
-            color = FreshColors.Ink,
+            color = FreshColors.OnWhite,
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp),
             modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp).rotate(-8f)
                 .clip(RoundedCornerShape(10.dp)).background(FreshColors.White)
@@ -314,6 +356,7 @@ fun CouponCard(
     progress: Float,
     modifier: Modifier = Modifier,
 ) {
+    val dark = FreshColors.palette === DarkPalette
     Row(
         modifier.fillMaxWidth().height(92.dp).clip(RoundedCornerShape(20.dp)).background(FreshColors.Card),
         verticalAlignment = Alignment.CenterVertically,
@@ -338,18 +381,18 @@ fun CouponCard(
             )
             Text(
                 chip,
-                color = Color(0xFF5B4FE0),
+                color = if (dark) Color(0xFFB4ADFF) else Color(0xFF5B4FE0),
                 style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp, lineHeight = 12.sp),
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 5.dp).clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFFE8EAF9)).padding(horizontal = 6.dp, vertical = 1.5.dp),
+                    .background(if (dark) Color(0xFF34336B) else Color(0xFFE8EAF9)).padding(horizontal = 6.dp, vertical = 1.5.dp),
             )
         }
         // Пунктир между частями купона.
         Canvas(Modifier.width(2.dp).height(76.dp)) {
             var y = 0f
             while (y < size.height) {
-                drawCircle(FreshColors.White, radius = size.width, center = Offset(size.width / 2, y))
+                drawCircle(FreshColors.Surface, radius = size.width, center = Offset(size.width / 2, y))
                 y += size.width * 5
             }
         }

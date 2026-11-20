@@ -12,8 +12,11 @@ object HomeContract {
         val today: Day? = null,
         val categories: List<Category> = emptyList(),
         val feed: ReplenishmentFeed? = null,
-        val purchased: List<Product> = emptyList(),
-        val hits: List<Product> = emptyList(),
+        /** Лента товаров сеткой: хиты недели, потом остальной ассортимент. */
+        val products: List<Product> = emptyList(),
+        /** Подборки между кусками ленты, как на главной приложения. */
+        val weeklySale: List<Product> = emptyList(),
+        val novelties: List<Product> = emptyList(),
         /** Сколько штук каждого товара в корзине: карточки показывают степпер вместо «+». */
         val inCart: Map<String, Int> = emptyMap(),
         /** Сумма товаров в корзине: купон «Доставка 0 ₽» показывает, сколько осталось. */

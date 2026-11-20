@@ -15,14 +15,15 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
 // Иконки нарисованы на Canvas: отдельная библиотека иконок ради нескольких штук не нужна.
 // Вкладки — залитые фигуры, как в нижней навигации референса; служебные (поиск, назад) — линиями.
 
-enum class NavIcon { Home, Products, Catalog, Ready, Cart, Profile, List, Search, Back, ChevronDown, Close, Heart }
+enum class NavIcon { Home, Products, Catalog, Ready, Cart, Profile, List, Search, Back, ChevronDown, Close, Heart, Star, Comment }
 
 @Composable
-fun NavIconView(icon: NavIcon, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp) {
+fun NavIconView(icon: NavIcon, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp, cutout: Color = FreshColors.Surface) {
     Canvas(modifier.size(size)) {
         val w = size.toPx()
         val stroke = Stroke(width = w * 0.09f, cap = StrokeCap.Round, join = StrokeJoin.Round)
@@ -31,7 +32,7 @@ fun NavIconView(icon: NavIcon, color: Color, modifier: Modifier = Modifier, size
             NavIcon.Products -> apple(w, color)
             NavIcon.Catalog -> tiles(w, color)
             NavIcon.Ready -> bowl(w, color)
-            NavIcon.Cart -> basket(w, color)
+            NavIcon.Cart -> basket(w, color, cutout)
             NavIcon.Profile -> person(w, color)
             NavIcon.List -> list(w, color, stroke)
             NavIcon.Search -> {
@@ -60,6 +61,30 @@ fun NavIconView(icon: NavIcon, color: Color, modifier: Modifier = Modifier, size
                     lineTo(w * 0.78f, w * 0.38f)
                 }
                 drawPath(path, color, style = stroke)
+            }
+
+            NavIcon.Star -> {
+                val path = Path()
+                for (i in 0 until 10) {
+                    val r = if (i % 2 == 0) w * 0.5f else w * 0.21f
+                    val a = (-90.0 + i * 36.0) * kotlin.math.PI / 180.0
+                    val x = w * 0.5f + r * kotlin.math.cos(a).toFloat()
+                    val y = w * 0.54f + r * kotlin.math.sin(a).toFloat()
+                    if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                path.close()
+                drawPath(path, color)
+            }
+
+            NavIcon.Comment -> {
+                drawOval(color, topLeft = Offset(w * 0.04f, w * 0.1f), size = Size(w * 0.92f, w * 0.76f))
+                val tail = Path().apply {
+                    moveTo(w * 0.16f, w * 0.66f)
+                    lineTo(w * 0.06f, w * 0.96f)
+                    lineTo(w * 0.42f, w * 0.82f)
+                    close()
+                }
+                drawPath(tail, color)
             }
 
             NavIcon.Heart -> {
@@ -140,7 +165,7 @@ private fun DrawScope.bowl(w: Float, color: Color) {
     }
 }
 
-private fun DrawScope.basket(w: Float, color: Color) {
+private fun DrawScope.basket(w: Float, color: Color, cutout: Color) {
     // Ручка корзины.
     val handle = Path().apply {
         moveTo(w * 0.3f, w * 0.38f)
@@ -159,9 +184,9 @@ private fun DrawScope.basket(w: Float, color: Color) {
         close()
     }
     drawPath(body, color)
-    // Прорези в корзине — цветом фона не закрасить, поэтому светлые полосы.
+    // Прорези в корзине — цветом фона под иконкой.
     listOf(0.38f, 0.62f).forEach { x ->
-        drawLine(Color.White, Offset(w * x, w * 0.52f), Offset(w * x, w * 0.76f), w * 0.08f, StrokeCap.Round)
+        drawLine(cutout, Offset(w * x, w * 0.52f), Offset(w * x, w * 0.76f), w * 0.08f, StrokeCap.Round)
     }
 }
 

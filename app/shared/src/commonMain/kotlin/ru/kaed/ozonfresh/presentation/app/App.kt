@@ -2,6 +2,7 @@ package ru.kaed.ozonfresh.presentation.app
 
 import androidx.compose.animation.core.EaseInCubic
 import androidx.compose.animation.core.EaseOutCubic
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -251,7 +252,7 @@ private fun ShopNavigationBar(
     cartCount: Int,
     onOpen: (String) -> Unit,
 ) {
-    Box(Modifier.fillMaxWidth().background(FreshColors.White).navigationBarsPadding(), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxWidth().background(FreshColors.Surface).navigationBarsPadding(), contentAlignment = Alignment.Center) {
         Row(Modifier.widthIn(max = READABLE_WIDTH).fillMaxWidth().height(56.dp)) {
             tabs.forEach { (plugin, tab) ->
                 val selected = section == plugin.section
@@ -308,15 +309,17 @@ private fun BarsOverContent(overlap: Boolean, content: @Composable () -> Unit, b
 /** Плашка над навигацией, как «Заказ от 300 ₽ • доставка от +0 ₽ ⌄» в приложении: сумма и условие доставки. */
 @Composable
 private fun DeliveryBar(cart: CartSummary, onClick: () -> Unit) {
+    // Как «Ещё 221 ₽ для заказа • доставка от +0 ₽» в приложении, но с правилом прототипа: бесплатно от 1 000 ₽.
     val (left, right) = when {
-        cart.items.isEmpty() -> "Доставка ${DELIVERY_FEE.rub()}" to "бесплатно от ${FREE_DELIVERY_FROM.rub()}"
-        cart.deliveryFee > 0 -> "Корзина ${cart.itemsTotal.rub()}" to "ещё ${(FREE_DELIVERY_FROM - cart.itemsTotal).rub()} до бесплатной"
+        cart.items.isEmpty() -> "Бесплатно от ${FREE_DELIVERY_FROM.rub()}" to "доставка ${DELIVERY_FEE.rub()}"
+        cart.deliveryFee > 0 -> "Ещё ${(FREE_DELIVERY_FROM - cart.itemsTotal).rub()} до бесплатной" to "доставка ${DELIVERY_FEE.rub()}"
         else -> "Корзина ${cart.itemsTotal.rub()}" to "доставка 0 ₽"
     }
+    val progress by animateFloatAsState((cart.itemsTotal.toFloat() / FREE_DELIVERY_FROM).coerceIn(0f, 1f), tween(400))
     Column(
         Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(topStart = BAR_RADIUS, topEnd = BAR_RADIUS))
-            .background(FreshColors.White)
+            .background(FreshColors.Surface)
             .clickable(onClickLabel = "Открыть корзину", onClick = onClick),
     ) {
         Row(
@@ -330,7 +333,10 @@ private fun DeliveryBar(cart: CartSummary, onClick: () -> Unit) {
             Text(right, color = FreshColors.Muted, style = style, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             NavIconView(NavIcon.ChevronDown, FreshColors.Muted, Modifier.padding(start = 4.dp), size = 14.dp)
         }
-        Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp).height(1.5.dp).clip(CircleShape).background(FreshColors.Line))
+        // Разделитель — он же полоска прогресса до бесплатной доставки.
+        Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp).height(3.dp).clip(CircleShape).background(FreshColors.Line)) {
+            Box(Modifier.fillMaxWidth(progress).height(3.dp).clip(CircleShape).background(FreshColors.Progress))
+        }
     }
 }
 

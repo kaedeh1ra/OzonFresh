@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.onEach
 import org.koin.compose.viewmodel.koinViewModel
 import ru.kaed.ozonfresh.domain.model.CartSource
 import ru.kaed.ozonfresh.domain.model.Product
+import ru.kaed.ozonfresh.domain.model.discountPercent
 import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.usecase.shop.AddToCartUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.CartItem
@@ -164,7 +165,7 @@ fun CartScreen(
             }
         }
         if (summary.items.isNotEmpty()) {
-            Box(Modifier.fillMaxWidth().background(FreshColors.White), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().background(FreshColors.Surface), contentAlignment = Alignment.Center) {
                 Button(
                     onClick = onCheckout,
                     shape = RoundedCornerShape(16.dp),
@@ -254,6 +255,10 @@ private fun androidx.compose.foundation.lazy.LazyListScope.recommended(
                     onQuantityChange = { onIntent(CartContract.Intent.ChangeQuantity(product.id, it)) },
                     modifier = Modifier.weight(1f),
                     productId = product.id,
+                    oldPrice = product.oldPrice?.rub(),
+                    discountPercent = product.discountPercent,
+                    rating = product.rating,
+                    reviews = product.reviews,
                 )
             }
             repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }

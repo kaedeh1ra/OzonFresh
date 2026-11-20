@@ -1,20 +1,26 @@
 package ru.kaed.ozonfresh.presentation.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -24,11 +30,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import ru.kaed.ozonfresh.domain.model.Product
+import ru.kaed.ozonfresh.domain.model.discountPercent
 import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.usecase.shop.FREE_DELIVERY_FROM
 import ru.kaed.ozonfresh.navigation.AppNavigator
@@ -38,6 +47,9 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.CategoryTile
 import ru.kaed.ozonfresh.presentation.designsystem.components.CouponCard
 import ru.kaed.ozonfresh.presentation.designsystem.components.GRID_EDGE
 import ru.kaed.ozonfresh.presentation.designsystem.components.GRID_GAP
+import ru.kaed.ozonfresh.presentation.designsystem.components.NavIcon
+import ru.kaed.ozonfresh.presentation.designsystem.components.NavIconView
+import ru.kaed.ozonfresh.presentation.designsystem.components.NewGreen
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductCard
 import ru.kaed.ozonfresh.presentation.designsystem.components.PromoBanner
 import ru.kaed.ozonfresh.presentation.designsystem.components.PromoStory
@@ -52,6 +64,8 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.TILE_HEIGHT
 import ru.kaed.ozonfresh.presentation.designsystem.components.TILE_WIDTH
 import ru.kaed.ozonfresh.presentation.designsystem.components.productColumns
 import ru.kaed.ozonfresh.presentation.designsystem.components.sectionPart
+import ru.kaed.ozonfresh.presentation.designsystem.components.storyImage
+import ru.kaed.ozonfresh.presentation.designsystem.components.tilePhoto
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.home.HomeContract.Effect
 import ru.kaed.ozonfresh.presentation.home.HomeContract.Intent
@@ -89,6 +103,7 @@ internal fun HomeRoute(navigator: AppNavigator) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     state: State,
@@ -102,17 +117,29 @@ fun HomeScreen(
     val columns = productColumns
     LazyColumn(Modifier.fillMaxSize().background(FreshColors.Canvas)) {
         // Долгое нажатие на адрес — вход в демо-панель для защиты.
-        item(key = "header") { ShopHeader(state.address, onOpenDemo = onOpenDemo) }
+        // Как в приложении: шапка с адресом и поиск остаются наверху, лента прокручивается под ними.
+        stickyHeader(key = "header") {
+            Column(Modifier.background(FreshColors.Dark)) {
+                ShopHeader(state.address, onOpenDemo = onOpenDemo)
+                Column(Modifier.sectionPart(top = true, bottom = false, onDark = true).padding(top = 8.dp, bottom = 8.dp)) {
+                    SearchBar(Modifier.padding(horizontal = 8.dp), onClick = onOpenSearch)
+                }
+            }
+        }
 
         item(key = "top") {
-            ShopSection(onDark = true, contentPadding = 8.dp, bottomPadding = 8.dp) {
-                SearchBar(Modifier.padding(horizontal = 8.dp), onClick = onOpenSearch)
+            Column(Modifier.sectionPart(top = false, bottom = true).padding(bottom = 8.dp)) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = STORY_ROW_START),
-                    modifier = Modifier.padding(top = 19.dp),
+                    modifier = Modifier.padding(top = 11.dp),
                 ) {
                     items(PROMO_STORIES, key = { it.second }) { (emoji, title) ->
-                        PromoStory(emoji, title, onClick = { onIntent(Intent.NotInPrototype(title.replace("\n", " "))) })
+                        PromoStory(
+                            emoji,
+                            title,
+                            onClick = { onIntent(Intent.NotInPrototype(title.replace("\n", " "))) },
+                            image = storyImage(title),
+                        )
                     }
                 }
                 LazyRow(
@@ -126,6 +153,7 @@ fun HomeScreen(
                             category.emoji,
                             { onOpenCategory(category.id) },
                             Modifier.size(TILE_WIDTH, TILE_HEIGHT),
+                            photo = tilePhoto(category.id),
                         )
                     }
                 }
@@ -172,40 +200,73 @@ fun HomeScreen(
             }
         }
 
-        if (state.purchased.isNotEmpty()) {
-            item(key = "purchased") {
-                ShopSection(contentPadding = 20.dp) {
-                    SectionTitle("Вы покупали", Modifier.padding(horizontal = padding))
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = padding),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(top = 12.dp),
-                    ) {
-                        items(state.purchased, key = { it.id }) { product ->
-                            ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.width(CAROUSEL_CARD_WIDTH), carousel = true)
-                        }
-                    }
-                }
+        // Лента как на главной приложения: две строки сетки, подборка, ещё две строки, подборка, остальное.
+        val chunk = columns * 2
+        val products = state.products
+        productGrid("grid-a", products.take(chunk), columns, state, onIntent, onOpenProduct)
+        if (state.weeklySale.isNotEmpty()) {
+            item(key = "sale") { ProductCarousel("Скидки недели", state.weeklySale, state, onIntent, onOpenProduct) }
+        }
+        productGrid("grid-b", products.drop(chunk).take(chunk), columns, state, onIntent, onOpenProduct)
+        if (state.novelties.isNotEmpty()) {
+            item(key = "new") { ProductCarousel("Новинки", state.novelties, state, onIntent, onOpenProduct) }
+        }
+        productGrid("grid-c", products.drop(chunk * 2), columns, state, onIntent, onOpenProduct)
+    }
+}
+
+/** Кусок ленты сеткой — отдельная белая секция, как между подборками в приложении. */
+private fun LazyListScope.productGrid(
+    key: String,
+    products: List<Product>,
+    columns: Int,
+    state: State,
+    onIntent: (Intent) -> Unit,
+    onOpenProduct: (String) -> Unit,
+) {
+    val rows = products.chunked(columns)
+    itemsIndexed(rows, key = { _, row -> key + "-" + row.first().id }) { index, row ->
+        Row(
+            Modifier.sectionPart(top = index == 0, bottom = index == rows.lastIndex)
+                .padding(top = if (index == 0) 4.dp else 0.dp)
+                .padding(start = GRID_EDGE, end = GRID_EDGE, bottom = if (index == rows.lastIndex) 12.dp else 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(GRID_GAP),
+        ) {
+            row.forEach { product ->
+                ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.weight(1f))
+            }
+            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+        }
+    }
+}
+
+/** Подборка «Скидки недели» / «Новинки»: заголовок с кнопкой «›» и горизонтальный ряд карточек. */
+@Composable
+private fun ProductCarousel(
+    title: String,
+    products: List<Product>,
+    state: State,
+    onIntent: (Intent) -> Unit,
+    onOpenProduct: (String) -> Unit,
+) {
+    ShopSection(contentPadding = 20.dp, bottomPadding = 12.dp) {
+        Row(Modifier.fillMaxWidth().padding(start = ScreenPadding, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            SectionTitle(title, Modifier.weight(1f))
+            Box(
+                Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(FreshColors.Card)
+                    .clickable(onClickLabel = "Все товары подборки") { onIntent(Intent.NotInPrototype(title)) },
+                contentAlignment = Alignment.Center,
+            ) {
+                NavIconView(NavIcon.Back, FreshColors.Muted, Modifier.rotate(180f), size = 18.dp)
             }
         }
-
-        item(key = "hits-title") {
-            SectionTitle(
-                "Хиты недели",
-                Modifier.sectionPart(top = true, bottom = false).padding(start = padding, end = padding, top = 20.dp, bottom = 12.dp),
-            )
-        }
-        val rows = state.hits.chunked(columns)
-        itemsIndexed(rows, key = { _, row -> "hits-" + row.first().id }) { index, row ->
-            Row(
-                Modifier.sectionPart(top = false, bottom = index == rows.lastIndex)
-                    .padding(start = GRID_EDGE, end = GRID_EDGE, bottom = if (index == rows.lastIndex) 12.dp else 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(GRID_GAP),
-            ) {
-                row.forEach { product ->
-                    ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.weight(1f))
-                }
-                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(top = 14.dp),
+        ) {
+            items(products, key = { it.id }) { product ->
+                ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.width(CAROUSEL_CARD_WIDTH), carousel = true)
             }
         }
     }
@@ -242,5 +303,12 @@ private fun ShopProductCard(
         modifier = modifier,
         productId = product.id,
         carousel = carousel,
+        oldPrice = product.oldPrice?.rub(),
+        discountPercent = product.discountPercent,
+        tag = if (product.isNew) "Новинка" else null,
+        tagColor = NewGreen,
+        tagIcon = if (product.isNew) NavIcon.Star else null,
+        rating = product.rating,
+        reviews = product.reviews,
     )
 }

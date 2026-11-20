@@ -179,7 +179,7 @@ private fun DateCard(state: State, onIntent: (Intent) -> Unit) {
 @Composable
 private fun RoundButton(symbol: String, label: String, onClick: () -> Unit) {
     Box(
-        Modifier.size(44.dp).clip(CircleShape).background(FreshColors.White)
+        Modifier.size(44.dp).clip(CircleShape).background(FreshColors.Surface)
             .clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -195,7 +195,7 @@ private fun GroupCard(group: ExperimentGroup, onIntent: (Intent) -> Unit) {
                 "«Контроль» ленту не видит, но эпизоды для него тоже считаются — так группы можно сравнить.",
     ) {
         Row(
-            Modifier.fillMaxWidth().clip(CircleShape).background(FreshColors.White).padding(4.dp),
+            Modifier.fillMaxWidth().clip(CircleShape).background(FreshColors.Surface).padding(4.dp),
         ) {
             ExperimentGroup.entries.forEach { option ->
                 val selected = option == group
