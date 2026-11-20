@@ -1,179 +1,122 @@
-# KMP Template
+# Ozon Fresh: прототип ленты «Пора пополнить»
 
-Шаблон Kotlin Multiplatform + Compose Multiplatform: Android, iOS, desktop (Windows, Linux, macOS) и веб
-(Kotlin/Wasm) из одного кода. Внутри — модульная архитектура, MVI, Koin, навигация через плагины фич, Ktor-клиент и генератор
-новых фич. Пакет по умолчанию `com.example.app`, переименовывается одной командой.
+Кликабельный прототип приложения доставки продуктов для защиты учебного консалтингового проекта.
+Главное в нём — лента «Пора пополнить» на главном экране: она подсказывает товары, которые у клиента
+скоро закончатся, по истории его покупок. Бэкенда нет, все данные моковые и лежат в приложении.
 
-## Что внутри
+Сделано на Kotlin Multiplatform и Compose Multiplatform. Показываем на **Android**, iOS собирается из
+того же кода. Web (wasm) и desktop остались от шаблона и компилируются, но под них прототип не
+проверялся. В вебе вместо эмодзи на картинках товаров будут квадратики: у Compose в браузере нет
+шрифта с эмодзи.
 
-| Модуль                  | Назначение                                                                                                        |
-|-------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `app/androidApp`        | Точка входа Android: `MainActivity`, манифест, подпись релиза                                                     |
-| `app/webApp`            | Точка входа веба (Kotlin/Wasm): `main.kt`, `index.html` с экраном загрузки                                        |
-| `app/desktopApp`        | Точка входа desktop (JVM): окно `main()`, установщики MSI/EXE, DEB/RPM, DMG                                       |
-| `iosApp`                | Xcode-проект iOS-приложения: SwiftUI-обёртка над экраном Compose из фреймворка `Shared`                           |
-| `app/shared`            | Оболочка: тема, панели, `NavHost` из плагинов фич, запуск Koin; для iOS — фреймворк `Shared` и `MainViewController` |
-| `app/core/domain`       | Чистый Kotlin: модели, интерфейсы репозиториев, use case'ы                                                        |
-| `app/core/data`         | Реализации репозиториев, Ktor `HttpClient`, хранилище настроек под каждую платформу                              |
-| `app/core/mvi`          | `MviViewModel` (State / Intent / Effect), `LoadState`, `CollectEffects`                                           |
-| `app/core/navigation`   | Контракты между фичами: `FeaturePlugin`, `AppNavigator`, общие маршруты                                           |
-| `app/core/designsystem` | `AppTheme` (светлая и тёмная), состояния загрузки и ошибки, `AppCard`, `WindowSize`                               |
-| `app/core/testing`      | Фейки для тестов                                                                                                  |
-| `app/feature/home`      | Пример фичи: экран-счётчик, MVI, use case'ы, тест ViewModel                                                       |
-| `build-logic`           | Convention-плагины, автоподключение фич, задача `newFeature` — см. [build-logic/README.md](build-logic/README.md) |
+Логотипы, фото и шрифты Ozon не используются: картинки товаров — цветные блоки с эмодзи, шрифт системный.
 
-Стек: Kotlin 2.4, Compose Multiplatform 1.12, AGP 9, Gradle 9, Koin 4, Ktor 3, Navigation Compose.
-Версии — в [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
+## Как работает лента
 
-Таргеты каждого модуля (задаются в `build-logic`, плагин `kmp.library`):
+Вся логика — чистый Kotlin в
+[`ReplenishmentEngine`](app/core/domain/src/commonMain/kotlin/ru/kaed/ozonfresh/domain/replenishment/ReplenishmentEngine.kt),
+без UI и системных часов: «сегодня» передаётся параметром. Числа правил собраны в `ReplenishmentRules`.
 
-| Платформа          | Kotlin-таргет                    | Точка входа                                     | Где собирается          |
-|--------------------|----------------------------------|-------------------------------------------------|-------------------------|
-| Android (minSdk 31)| `android`                        | `app/androidApp`                                | любая ОС                |
-| iOS 15+            | `iosArm64`, `iosSimulatorArm64`  | `iosApp` (Xcode) → фреймворк из `app/shared`    | только macOS + Xcode 16 |
-| Windows/Linux/macOS| `jvm`                            | `app/desktopApp`                                | любая ОС (установщик — под текущую) |
-| Браузер            | `wasmJs`                         | `app/webApp`                                    | любая ОС                |
+1. **Кандидаты** — товары, которые клиент получил хотя бы 3 раза. Считаются только доставленные
+   покупки, возвраты и отмены — нет.
+2. **Скорость**: для каждой пары соседних покупок дни между ними делятся на число штук в более ранней.
+   Медиана этих значений — дни на одну штуку.
+3. **Срок** = дата последней покупки + дни на штуку × штук в последней покупке.
+4. **Окно показа**: от 2 дней до срока до 5 дней после. Вне окна товара в ленте нет.
+5. Товар **без наличия** по текущему адресу в ленту не попадает. Перед оплатой наличие проверяется
+   ещё раз: закончившийся товар убирается из заказа, клиент видит сообщение.
+6. Кнопки на товаре:
+   - **«Добавить»** — в обычную корзину, никакой автопокупки;
+   - **«Ещё есть»** — скрыть товар и сдвинуть срок на половину интервала (`STILL_HAVE_SHIFT_RATIO = 0.5`);
+   - **«Позже»** — скрыть на 2 дня, срок не меняется.
+7. После оформления заказа срок для купленных товаров пересчитывается по новой истории. Ответы
+   «Ещё есть» и «Позже» привязаны к последней покупке и после новой покупки больше не действуют.
+8. Лента не делает автозаказ, автоплатёж, подписку и скидки. Цена обычная.
+9. **Эпизод** — одно показанное предложение набора товаров. Повторные показы в том же окне новых
+   эпизодов не создают: новый эпизод появляется, только когда в ленту попадает товар в окне, которого
+   клиент ещё не видел.
 
-Симулятор на Intel-маках (`iosX64`) не включён: при необходимости добавьте `iosX64()` в
-`KmpLibraryConventionPlugin` и уберите `EXCLUDED_ARCHS` в настройках Xcode-проекта. На Windows и Linux
-iOS-таргеты пропускаются (`kotlin.native.ignoreDisabledTargets` в `gradle.properties`), остальное
-собирается как обычно.
+Контрольный пример (он же юнит-тест): молоко куплено 1 октября (2 уп.), 15 октября (2 уп.),
+29 октября (1 уп.). 14 дней на 2 упаковки — 7 дней на одну, срок 5 ноября, окно с 3 по 10 ноября.
 
-## Как начать проект из шаблона
+## Демо-данные
 
-1. На GitHub: **Use this template → Create a new repository**.
-   (Чтобы кнопка появилась у самого шаблона: Settings → General → отметить **Template repository**.)
-2. Переименуйте проект — один из вариантов ниже.
-3. Перепишите этот README под свой проект и удалите `rename.sh`, `rename.ps1`,
-   `.github/workflows/rename.yml`: после переименования они не нужны.
+[`MockShopData`](app/core/data/src/commonMain/kotlin/ru/kaed/ozonfresh/data/mock/MockShopData.kt):
+28 товаров, остатки и история покупок демо-клиента с августа по ноябрь 2026. Демо-дата — 20 ноября 2026.
 
-## Переименование
+| Товар                  | Что показывает                                                                    |
+|------------------------|-----------------------------------------------------------------------------------|
+| Кофе, бананы, молоко, туалетная бумага, яйца | В ленте 20 ноября (сроки 17–22 ноября)                       |
+| Корм для кошек         | В окне (срок 18 ноября), но нет в наличии — фильтр по остаткам                    |
+| Средство для посуды    | Доставлено только дважды, третий заказ отменён — в ленту не попадает              |
+| Кофе                   | Есть возврат 10 ноября, он не учитывается                                         |
+| Хлеб, вода, йогурт     | Появляются, если листать дни вперёд (окна с 21–22 ноября)                         |
 
-Скрипт меняет:
+Тест [`MockScenarioTest`](app/core/data/src/commonTest/kotlin/ru/kaed/ozonfresh/data/MockScenarioTest.kt)
+следит, чтобы этот сценарий не сломался при правке моков.
 
-- `package` / `import` и все упоминания `com.example.app` в коде и скриптах сборки;
-- папки `com/example/app` → `ru/myname/coolapp` в каждом source set (`src/*/kotlin`, включая `build-logic`);
-- `Constants.BASE_PACKAGE`, а от него — Android `namespace` всех модулей и `applicationId`;
-- `rootProject.name` в `settings.gradle.kts` (`KmpTemplate` → ваше имя);
-- desktop: `mainClass`, `bundleID` для macOS (из `Constants`), имя пакета установщика (`rootProject.name`);
-- iOS: `PRODUCT_NAME` и `PRODUCT_BUNDLE_IDENTIFIER` в `iosApp/Configuration/Config.xcconfig`
-  (подчёркивания в bundle id заменяются на `-`), имя `.app` в `project.pbxproj` и схеме;
-- отображаемое имя приложения: `strings.xml` (Android), `<title>` в `index.html` (веб), заголовок окна
-  (desktop), `CFBundleDisplayName` в `Info.plist` (iOS).
+## Демо-панель
 
-`README.md`, `.github/` и сами скрипты не трогаются. Скрипт откажется работать, если проект уже
-переименован или в git есть незакоммиченные изменения (флаг `--force` / `-Force` — всё равно
-выполнить). Проверки ввода: пакет — минимум два сегмента из `[a-z0-9_]`, без ключевых слов Kotlin/Java;
-имя — латинские буквы и цифры; в отображаемом имени нельзя `< > & " '`.
+Открывается **долгим нажатием на адрес** на главной или нажатием на строку «Версия 0.1 · прототип»
+внизу профиля.
 
-**macOS / Linux / Git Bash** (нужны bash и perl, оба есть в Git for Windows):
+- «Сегодняшняя» дата: листать по дню или по неделе и смотреть, как меняется лента.
+- Группа A/B-теста: «Тест» видит ленту, «Контроль» нет (пилот 15% на 15%). Эпизоды считаются
+  для обеих групп, чтобы их можно было сравнить.
+- Кандидаты на дату: дни на штуку, срок, окно, причина показа или скрытия, переключатель наличия.
+- Метрики пилота и лог событий: показ ленты (по эпизодам), «Добавить», «Ещё есть», «Позже»,
+  оплата заказа с товарами из ленты, товар закончился перед оплатой.
+- Сброс к исходным данным. Состояние живёт в памяти, перезапуск приложения тоже всё сбрасывает.
 
-```bash
-./rename.sh --package ru.myname.coolapp --name CoolApp --display-name "Cool App"
-```
+### Сценарий для защиты
 
-**Windows PowerShell:**
+1. Главная: блок «Пора пополнить» выше подборок, 5 товаров.
+2. Демо-панель: корм для кошек «Нет в наличии», средство для посуды в списке «Мало покупок».
+3. «Добавить» на кофе, «Ещё есть» на бананах (срок 19 → 23 ноября), «Позже» на яйцах.
+4. В демо-панели выключить наличие кофе, оформить заказ: кофе уберут из заказа с сообщением.
+5. Добавить молоко из ленты и оплатить. Молоко уходит из ленты, срок пересчитан по новой покупке.
+6. Переключить группу на «Контроль»: ленты нет. Полистать даты, показать лог и метрики.
 
-```powershell
-.\rename.ps1 -Package ru.myname.coolapp -Name CoolApp -DisplayName "Cool App"
-```
-
-**Прямо на GitHub:** Actions → **Rename project** → Run workflow, ввести пакет и имя. Workflow запустит
-`rename.sh` и закоммитит результат в выбранную ветку. В репозитории-шаблоне он не запускается.
-Если Actions не может пушить, включите Settings → Actions → General → Workflow permissions → **Read and write**.
-
-`--display-name` необязателен, по умолчанию совпадает с `--name`. После переименования:
-
-```bash
-./gradlew clean testAndroidHostTest jvmTest
-```
-
-## Сборка и запуск
+## Запуск
 
 Нужны JDK 21+ и Android SDK (путь в `local.properties` → `sdk.dir`, Android Studio создаёт его сама).
-JDK для демона Gradle задана в `gradle/gradle-daemon-jvm.properties`.
 
 ```bash
-./gradlew :app:androidApp:installDebug                 # Android: собрать и поставить на устройство/эмулятор
-./gradlew :app:androidApp:assembleRelease              # Android: релизный APK (подпись — ниже)
-./gradlew :app:webApp:wasmJsBrowserDevelopmentRun      # веб: dev-сервер с автооткрытием браузера
-./gradlew :app:webApp:wasmJsBrowserDistribution        # веб: статика в app/webApp/build/dist/wasmJs/productionExecutable
-./gradlew testAndroidHostTest jvmTest                  # тесты всех модулей на JVM (Android host и desktop)
+./gradlew :app:androidApp:installDebug     # собрать и поставить на телефон или эмулятор
+./gradlew :app:androidApp:assembleDebug    # APK: app/androidApp/build/outputs/apk/debug/androidApp-debug.apk
+./gradlew testAndroidHostTest jvmTest      # все тесты на JVM
 ```
 
-На Windows — `gradlew.bat` или `.\gradlew` в PowerShell.
-
-### Desktop (Windows, Linux, macOS)
+На Windows — `.\gradlew` в PowerShell. Быстро прогнать только движок и демо-сценарий:
 
 ```bash
-./gradlew :app:desktopApp:run                          # запустить окно приложения
-./gradlew :app:desktopApp:createDistributable          # папка с приложением и встроенной JRE, без установщика
-./gradlew :app:desktopApp:packageDistributionForCurrentOS  # установщик под текущую ОС
+./gradlew :app:core:domain:jvmTest :app:core:data:jvmTest
 ```
 
-Установщики лежат в `app/desktopApp/build/compose/binaries/main/<формат>/`. Каждый формат собирается
-только на своей ОС: MSI и EXE — на Windows (WiX плагин Compose скачает сам), DEB и RPM — на Linux
-(для RPM нужен `rpmbuild`), DMG — на macOS. Отдельные задачи: `packageMsi`, `packageExe`, `packageDeb`,
-`packageRpm`, `packageDmg`. Для обновления MSI поверх установленной версии задайте свой постоянный
-`upgradeUuid` в `app/desktopApp/build.gradle.kts`; для публикации DMG нужны подпись и нотаризация
-(`macOS { signing { ... } notarization { ... } }`).
+**iOS** (только на Mac с Xcode 16+): открыть `iosApp/iosApp.xcodeproj`, схема `iosApp`, симулятор, Run.
+Xcode сам соберёт Kotlin-фреймворк `Shared`. Для запуска на устройстве впишите Team ID в
+`iosApp/Configuration/Config.xcconfig`.
 
-### iOS (только на Mac)
+## Устройство проекта
 
-Нужны Xcode 16+ и JDK 21. Первый запуск Gradle скачает Kotlin/Native toolchain в `~/.konan` (сотни мегабайт).
+| Модуль                  | Что внутри                                                                                   |
+|-------------------------|----------------------------------------------------------------------------------------------|
+| `app/core/domain`       | Модели (`Product`, `Purchase`, `Stock`, `Day`), `ReplenishmentEngine`, интерфейсы репозиториев, use case'ы |
+| `app/core/data`         | Моковые данные и репозитории в памяти                                                        |
+| `app/core/designsystem` | Тема (палитра `FreshColors`), карточка товара, степпер, иконки                               |
+| `app/core/navigation`   | Общие маршруты (`Destinations`), контракты навигации                                         |
+| `app/core/mvi`          | `MviViewModel`: State / Intent / Effect                                                      |
+| `app/feature/home`      | Главная и блок «Пора пополнить»                                                              |
+| `app/feature/catalog`   | Каталог: поиск, разделы, товары раздела                                                      |
+| `app/feature/product`   | Карточка товара                                                                              |
+| `app/feature/cart`      | Корзина, оформление, «Заказ оформлен»                                                        |
+| `app/feature/profile`   | Профиль-заглушка со скрытым входом в демо-панель                                             |
+| `app/feature/demo`      | Демо-панель                                                                                  |
+| `app/shared`            | Оболочка: нижняя навигация, граф навигации, Koin                                             |
 
-1. Откройте `iosApp/iosApp.xcodeproj` в Xcode, выберите схему `iosApp` и симулятор, нажмите Run.
-   Xcode сам вызовет `./gradlew :app:shared:embedAndSignAppleFrameworkForXcode` (build phase
-   «Compile Kotlin Framework») и подключит фреймворк `Shared`.
-2. Для запуска на устройстве впишите свой Team ID в `iosApp/Configuration/Config.xcconfig`
-   (`TEAM_ID=`) — подпись настроится автоматически.
+Экраны сделаны в MVI (`MviViewModel`), зависимости — через Koin, фичи подключаются сами как плагины
+навигации. Новая фича создаётся командой `./gradlew newFeature --name=<имя>`, подробности — в
+[build-logic/README.md](build-logic/README.md).
 
-Из терминала без Xcode-интерфейса:
-
-```bash
-./gradlew :app:shared:linkDebugFrameworkIosSimulatorArm64   # только Kotlin-часть
-xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator \
-  -destination 'generic/platform=iOS Simulator' ARCHS=arm64 CODE_SIGNING_ALLOWED=NO build
-```
-
-Как устроено: `app/shared` собирается в статический фреймворк `Shared`; в нём функция
-`MainViewController()` (`app/shared/src/iosMain`) запускает Koin и возвращает `UIViewController` с
-экраном Compose. SwiftUI-приложение (`iosApp/iosApp/iOSApp.swift`, `ContentView.swift`) просто
-показывает этот контроллер на весь экран. Имя, bundle id, версия и адрес API —
-в `iosApp/Configuration/Config.xcconfig`.
-
-### Адрес API
-
-`HttpClient` уже лежит в Koin (`dataModule`): репозиторий берёт его через `get()` и ходит по
-относительным путям. Базовый адрес:
-
-- веб — origin страницы (`https://ваш-сайт/`);
-- Android — gradle-свойство `apiBaseUrl`, по умолчанию `https://example.com/`:
-  `./gradlew :app:androidApp:installDebug -PapiBaseUrl=http://10.0.2.2:8080/` или строка
-  `apiBaseUrl=...` в `gradle.properties`;
-- desktop — то же свойство: `./gradlew :app:desktopApp:run -PapiBaseUrl=http://localhost:8080/`
-  (в приложение попадает как `-Dapp.apiBaseUrl`);
-- iOS — `API_BASE_URL` в `iosApp/Configuration/Config.xcconfig` (`//` там пишется как `/$()/`).
-
-### Подпись релиза Android
-
-Скопируйте `keystore.properties.example` в `keystore.properties` (он в `.gitignore`) и заполните, либо
-задайте переменные окружения `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`. Без
-ключа релиз подписывается debug-ключом.
-
-## Новая фича
-
-```bash
-./gradlew newFeature --name=settings --tab="Настройки"
-```
-
-Создаст модуль `app/feature/settings` с MVI-экраном, Koin-модулем и тестом; settings, Koin и навигация
-подхватят его сами. Подробности — в [build-logic/README.md](build-logic/README.md).
-
-## CI
-
-`.github/workflows/ci.yml` на каждый push и PR:
-
-- `build` (Linux): тесты, debug APK, веб-дистрибутив, desktop-приложение;
-- `apple` (macOS): Kotlin для iOS, фреймворк для симулятора, DMG и сборка `iosApp` через `xcodebuild`;
-- `rename-smoke` — только в репозитории-шаблоне: после `rename.sh` проект собирается.
+Упрощения прототипа: оплата не списывается, заказ сразу считается доставленным (поэтому срок
+пересчитывается сразу после оплаты), адрес один, системные часы не используются — дата задаётся в демо-панели.
