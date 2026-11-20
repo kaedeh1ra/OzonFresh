@@ -41,7 +41,7 @@ import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 fun ProductImage(
     emoji: String,
     modifier: Modifier = Modifier,
-    emojiSize: TextUnit = 64.sp,
+    emojiSize: TextUnit = 56.sp,
     shape: RoundedCornerShape = RoundedCornerShape(24.dp),
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
@@ -57,7 +57,7 @@ fun QuantityStepper(
     quantity: Int,
     onChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    height: Dp = 40.dp,
+    height: Dp = 36.dp,
 ) {
     Row(
         modifier.height(height).clip(CircleShape).background(FreshColors.Teal),
@@ -76,13 +76,13 @@ private fun StepperButton(symbol: String, label: String, size: Dp, onClick: () -
         Modifier.size(size).clip(CircleShape).clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(symbol, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text(symbol, color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 /** Белая круглая кнопка с корзиной поверх картинки товара. */
 @Composable
-fun BasketButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 44.dp) {
+fun BasketButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 38.dp) {
     Box(
         modifier.size(size).shadow(6.dp, CircleShape).clip(CircleShape).background(FreshColors.White)
             .clickable(role = Role.Button, onClickLabel = "В корзину", onClick = onClick),

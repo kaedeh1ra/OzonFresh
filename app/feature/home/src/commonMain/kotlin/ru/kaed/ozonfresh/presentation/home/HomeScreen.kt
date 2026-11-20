@@ -113,7 +113,7 @@ fun HomeScreen(
                     modifier = Modifier.padding(top = 10.dp),
                 ) {
                     items(state.categories, key = { it.id }) { category ->
-                        CategoryTile(category.title, category.emoji, { onOpenCategory(category.id) }, Modifier.width(124.dp))
+                        CategoryTile(category.title, category.emoji, { onOpenCategory(category.id) }, Modifier.width(104.dp))
                     }
                 }
                 PromoBanner(
@@ -168,7 +168,7 @@ fun HomeScreen(
                         modifier = Modifier.padding(top = 14.dp),
                     ) {
                         items(state.purchased, key = { it.id }) { product ->
-                            ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.width(170.dp))
+                            ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.width(146.dp))
                         }
                     }
                 }

@@ -1,15 +1,29 @@
 package ru.kaed.ozonfresh.presentation.app
 
+import androidx.compose.animation.core.EaseInCubic
+import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -18,11 +32,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -33,11 +43,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -60,6 +73,14 @@ import ru.kaed.ozonfresh.presentation.designsystem.theme.AppTheme
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
 private const val NAV_FADE_MS = 150
+private const val SHEET_MS = 320
+
+/** Раздел под открытой шторкой чуть уменьшается и тускнеет. */
+private const val BEHIND_SCALE = 0.94f
+private const val BEHIND_ALPHA = 0.6f
+
+/** Шторка — любой экран, кроме самих вкладок. */
+private fun NavBackStackEntry.isSheet(tabSections: Set<String>): Boolean = destination.route !in tabSections
 
 /**
  * Оболочка: верхняя панель, нижняя навигация и граф навигации. Разделы она не знает по именам —
@@ -85,6 +106,7 @@ fun App(navController: NavHostController = rememberNavController()) {
         val route = backStackEntry?.destination?.route
         // Экран, открытый поверх раздела, подсвечивает вкладку своего раздела.
         val currentPlugin = plugins.firstOrNull { route in it.routes }
+        val tabSections = remember(tabs) { tabs.map { it.first.section }.toSet() }
         val section = currentPlugin?.section ?: route
 
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -92,6 +114,8 @@ fun App(navController: NavHostController = rememberNavController()) {
                 Scaffold(
                     // Тёмная полоса под статус-баром, как у референса; экраны рисуют свой фон сами.
                     containerColor = FreshColors.Dark,
+                    // Нижний отступ под системную панель даёт сама навигация, а шторки заливают его белым.
+                    contentWindowInsets = WindowInsets.statusBars,
                     topBar = {
                         // Экраны магазина рисуют заголовки сами; панель нужна только для служебных ссылок.
                         if (links.isNotEmpty()) {
@@ -112,30 +136,12 @@ fun App(navController: NavHostController = rememberNavController()) {
                         if (tabs.size > 1 && onTabScreen) {
                             Column(Modifier.background(FreshColors.Canvas)) {
                                 DeliveryBar(cart)
-                                NavigationBar(containerColor = FreshColors.White, tonalElevation = 0.dp) {
-                                    tabs.forEach { (plugin, tab) ->
-                                        NavigationBarItem(
-                                            selected = section == plugin.section,
-                                            onClick = { navigator.open(plugin.section) },
-                                            icon = {
-                                                val badge = if (plugin.section == Destinations.CART) cart.count else 0
-                                                BadgedBox(badge = {
-                                                    if (badge > 0) Badge(containerColor = FreshColors.Pink) { Text("$badge") }
-                                                }) {
-                                                    NavIconView(tab.icon, LocalContentColor.current, size = 28.dp)
-                                                }
-                                            },
-                                            label = { Text(tab.label, style = MaterialTheme.typography.bodyMedium) },
-                                            colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = FreshColors.Ink,
-                                                selectedTextColor = FreshColors.Ink,
-                                                unselectedIconColor = FreshColors.NavInactive,
-                                                unselectedTextColor = FreshColors.NavInactive,
-                                                indicatorColor = Color.Transparent,
-                                            ),
-                                        )
-                                    }
-                                }
+                                ShopNavigationBar(
+                                    tabs = tabs,
+                                    section = section,
+                                    cartCount = cart.count,
+                                    onOpen = navigator::open,
+                                )
                             }
                         }
                     },
@@ -144,15 +150,92 @@ fun App(navController: NavHostController = rememberNavController()) {
                         navController,
                         startDestination = Destinations.HOME,
                         modifier = Modifier.padding(padding).consumeWindowInsets(padding),
-                        // Стандартный кроссфейд длится 700 мс: при частых кликах анимации накладываются «волной».
-                        enterTransition = { fadeIn(tween(NAV_FADE_MS)) },
-                        exitTransition = { fadeOut(tween(NAV_FADE_MS)) },
-                        popEnterTransition = { fadeIn(tween(NAV_FADE_MS)) },
-                        popExitTransition = { fadeOut(tween(NAV_FADE_MS)) },
+                        // Вкладки сменяются коротким кроссфейдом. Экраны поверх раздела (товар, оформление, демо-панель)
+                        // выезжают шторкой снизу; при предиктивном жесте «назад» шторка уходит вниз вслед за пальцем,
+                        // а раздел под ней возвращается из лёгкого уменьшения.
+                        enterTransition = {
+                            if (targetState.isSheet(tabSections)) {
+                                slideInVertically(tween(SHEET_MS)) { it } + fadeIn(tween(SHEET_MS / 2))
+                            } else {
+                                fadeIn(tween(NAV_FADE_MS))
+                            }
+                        },
+                        exitTransition = {
+                            if (targetState.isSheet(tabSections)) {
+                                scaleOut(tween(SHEET_MS), targetScale = BEHIND_SCALE) + fadeOut(tween(SHEET_MS), targetAlpha = BEHIND_ALPHA)
+                            } else {
+                                fadeOut(tween(NAV_FADE_MS))
+                            }
+                        },
+                        popEnterTransition = {
+                            if (initialState.isSheet(tabSections)) {
+                                scaleIn(tween(SHEET_MS), initialScale = BEHIND_SCALE) + fadeIn(tween(SHEET_MS), initialAlpha = BEHIND_ALPHA)
+                            } else {
+                                fadeIn(tween(NAV_FADE_MS))
+                            }
+                        },
+                        popExitTransition = {
+                            if (initialState.isSheet(tabSections)) {
+                                slideOutVertically(tween(SHEET_MS)) { it }
+                            } else {
+                                fadeOut(tween(NAV_FADE_MS))
+                            }
+                        },
+                        // Жест «назад» двигает переход вслед за пальцем: шторка уезжает вниз и чуть уменьшается,
+                        // раздел под ней проявляется. Без этого NavHost просто сжимает экран к центру.
+                        predictivePopEnterTransition = {
+                            if (initialState.isSheet(tabSections)) {
+                                scaleIn(initialScale = BEHIND_SCALE) + fadeIn(initialAlpha = BEHIND_ALPHA)
+                            } else {
+                                fadeIn()
+                            }
+                        },
+                        predictivePopExitTransition = {
+                            if (initialState.isSheet(tabSections)) {
+                                // Кубическое ускорение: пока палец тянет, шторка сдвигается немного (как в системном
+                                // «назад»), основная часть пути — уже после отпускания.
+                                slideOutVertically(tween(SHEET_MS, easing = EaseInCubic)) { it } +
+                                    scaleOut(tween(SHEET_MS, easing = EaseOutCubic), targetScale = 0.9f)
+                            } else {
+                                fadeOut()
+                            }
+                        },
                     ) {
                         plugins.forEach { plugin -> with(plugin) { register(host) } }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** Нижняя навигация как в приложении: ниже стандартной Material (80 dp), без подсветки, активная вкладка чёрная. */
+@Composable
+private fun ShopNavigationBar(
+    tabs: List<Pair<FeaturePlugin, FeatureEntry.Tab>>,
+    section: String?,
+    cartCount: Int,
+    onOpen: (String) -> Unit,
+) {
+    Row(Modifier.fillMaxWidth().background(FreshColors.White).navigationBarsPadding().height(56.dp)) {
+        tabs.forEach { (plugin, tab) ->
+            val selected = section == plugin.section
+            val color = if (selected) FreshColors.Ink else FreshColors.NavInactive
+            Column(
+                Modifier.weight(1f).fillMaxHeight().selectable(selected, role = Role.Tab) { onOpen(plugin.section) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                val badge = if (plugin.section == Destinations.CART) cartCount else 0
+                BadgedBox(badge = { if (badge > 0) Badge(containerColor = FreshColors.Pink) { Text("$badge") } }) {
+                    NavIconView(tab.icon, color, size = 23.dp)
+                }
+                Text(
+                    tab.label,
+                    color = color,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+                    modifier = Modifier.padding(top = 3.dp),
+                )
             }
         }
     }
@@ -174,9 +257,9 @@ private fun DeliveryBar(cart: CartSummary) {
         maxLines = 1,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
             .background(FreshColors.White)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 9.dp),
     )
     HorizontalDivider(color = FreshColors.Line, modifier = Modifier.background(FreshColors.White).padding(horizontal = 16.dp))
 }

@@ -38,7 +38,7 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
 import ru.kaed.ozonfresh.presentation.designsystem.components.ShopSection
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
-private val CARD_WIDTH = 156.dp
+private val CARD_WIDTH = 146.dp
 
 /**
  * Блок «Пора пополнить»: белая секция выше обычных подборок. Только подсказки: «Добавить» кладёт
@@ -127,12 +127,12 @@ private fun ReplenishmentCard(
                 onClick = onAdd,
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.padding(top = 8.dp).fillMaxWidth().height(38.dp),
+                modifier = Modifier.padding(top = 8.dp).fillMaxWidth().height(34.dp),
             ) {
                 Text("Добавить")
             }
         } else {
-            QuantityStepper(quantity, onQuantityChange, Modifier.padding(top = 8.dp).fillMaxWidth(), height = 38.dp)
+            QuantityStepper(quantity, onQuantityChange, Modifier.padding(top = 8.dp).fillMaxWidth(), height = 34.dp)
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -147,8 +147,8 @@ private fun SmallAction(text: String, onClick: () -> Unit) {
     TextButton(
         onClick = onClick,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-        modifier = Modifier.height(36.dp),
+        modifier = Modifier.height(32.dp),
     ) {
-        Text(text, color = FreshColors.Muted, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), fontWeight = FontWeight.SemiBold)
+        Text(text, color = FreshColors.Muted, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp), fontWeight = FontWeight.SemiBold)
     }
 }
