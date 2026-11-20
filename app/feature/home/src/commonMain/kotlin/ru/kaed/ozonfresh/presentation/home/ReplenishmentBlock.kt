@@ -139,9 +139,15 @@ private fun ReplenishmentCard(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                "${product.unit} · берёте раз в ${item.forecast.intervalDays} дн.",
+                product.unit,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+            Text(
+                "Берёте раз в ${item.forecast.intervalDays} дн.",
+                style = MaterialTheme.typography.bodySmall,
+                color = FreshColors.TealDark,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

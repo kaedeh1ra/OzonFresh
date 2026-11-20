@@ -105,7 +105,7 @@ fun App(navController: NavHostController = rememberNavController()) {
                                         icon = {
                                             val badge = if (plugin.section == Destinations.CART) cartCount else 0
                                             BadgedBox(badge = {
-                                                if (badge > 0) Badge { Text("$badge") }
+                                                if (badge > 0) Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("$badge") }
                                             }) {
                                                 NavIconView(tab.icon, LocalContentColor.current)
                                             }

@@ -167,14 +167,16 @@ fun CheckoutScreen(
 
     if (state.unavailable.isNotEmpty()) {
         val names = state.unavailable.joinToString { "«${it.name}»" }
+        val next = if (state.summary.items.isEmpty()) {
+            "В заказе ничего не осталось, вернём вас в корзину."
+        } else {
+            "Мы убрали это из заказа и пересчитали сумму. Проверьте заказ и оплатите ещё раз."
+        }
         AlertDialog(
             onDismissRequest = { onIntent(CheckoutContract.Intent.DismissUnavailable) },
             title = { Text("Товар закончился") },
             text = {
-                Text(
-                    "Пока вы оформляли заказ, закончилось: $names. Мы убрали это из заказа и пересчитали сумму. " +
-                            "Проверьте заказ и оплатите ещё раз.",
-                )
+                Text("Пока вы оформляли заказ, закончилось: $names. $next")
             },
             confirmButton = {
                 TextButton({ onIntent(CheckoutContract.Intent.DismissUnavailable) }) { Text("Понятно") }
