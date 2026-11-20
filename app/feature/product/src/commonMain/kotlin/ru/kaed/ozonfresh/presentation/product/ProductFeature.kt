@@ -49,6 +49,7 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.MessageState
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductImage
 import ru.kaed.ozonfresh.presentation.designsystem.components.QuantityStepper
 import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.SheetScreen
 import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
 import ru.kaed.ozonfresh.presentation.mvi.MviViewModel
@@ -105,11 +106,11 @@ private fun ProductRoute(productId: String, navigator: AppNavigator) {
 @Composable
 fun ProductScreen(state: ProductContract.State, onIntent: (ProductContract.Intent) -> Unit, onBack: () -> Unit) {
     val product = state.product
-    Column(Modifier.fillMaxSize()) {
+    SheetScreen {
         ScreenHeader(product?.name ?: "Товар", onBack)
         if (product == null) {
             MessageState("Товар не найден", description = "Возможно, его убрали из ассортимента")
-            return
+            return@SheetScreen
         }
         val padding = windowSize.contentPadding
         Column(
@@ -118,10 +119,9 @@ fun ProductScreen(state: ProductContract.State, onIntent: (ProductContract.Inten
         ) {
             ProductImage(
                 product.emoji,
-                product.tint,
                 Modifier.widthIn(max = 480.dp).fillMaxWidth().aspectRatio(1.3f).align(Alignment.CenterHorizontally),
-                emojiSize = 112.sp,
-                shape = RoundedCornerShape(24.dp),
+                emojiSize = 140.sp,
+                shape = RoundedCornerShape(32.dp),
             )
             Text(product.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 8.dp))
             Text(product.unit, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -134,7 +134,7 @@ fun ProductScreen(state: ProductContract.State, onIntent: (ProductContract.Inten
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(product.price.rub(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(product.price.rub(), style = MaterialTheme.typography.headlineMedium)
             if (state.quantity == 0) {
                 Button(
                     onClick = { onIntent(ProductContract.Intent.Add) },

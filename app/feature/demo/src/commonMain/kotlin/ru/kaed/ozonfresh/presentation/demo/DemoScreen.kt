@@ -58,6 +58,7 @@ import ru.kaed.ozonfresh.presentation.demo.DemoContract.Intent
 import ru.kaed.ozonfresh.presentation.demo.DemoContract.State
 import ru.kaed.ozonfresh.presentation.designsystem.components.Pill
 import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.SheetScreen
 import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
@@ -84,7 +85,7 @@ internal fun DemoRoute(navigator: AppNavigator) {
 @Composable
 fun DemoScreen(state: State, onIntent: (Intent) -> Unit, onBack: () -> Unit) {
     val padding = windowSize.contentPadding
-    Column(Modifier.fillMaxSize()) {
+    SheetScreen {
         ScreenHeader("Демо-панель", onBack)
         LazyColumn(
             contentPadding = PaddingValues(start = padding, end = padding, bottom = 32.dp),
@@ -163,7 +164,7 @@ private fun DateCard(state: State, onIntent: (Intent) -> Unit) {
             listOf(-7 to "−7 дн.", 7 to "+7 дн.").forEach { (days, label) ->
                 Text(
                     label,
-                    color = FreshColors.TealDark,
+                    color = FreshColors.TealText,
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.clip(CircleShape).clickable { onIntent(Intent.ShiftDay(days)) }
                         .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -277,8 +278,8 @@ private fun StatusPill(status: ReplenishmentStatus, group: ExperimentGroup) {
         ReplenishmentStatus.TOO_EARLY -> "Окно ещё не началось" to (FreshColors.White to FreshColors.Muted)
         ReplenishmentStatus.TOO_LATE -> "Окно закончилось" to (FreshColors.White to FreshColors.Muted)
         ReplenishmentStatus.OUT_OF_STOCK -> "Нет в наличии" to (FreshColors.PinkSoft to FreshColors.PinkDark)
-        ReplenishmentStatus.HIDDEN_STILL_HAVE -> "Скрыт: «Ещё есть»" to (FreshColors.TealSoft to FreshColors.TealDark)
-        ReplenishmentStatus.HIDDEN_LATER -> "Скрыт: «Позже»" to (FreshColors.TealSoft to FreshColors.TealDark)
+        ReplenishmentStatus.HIDDEN_STILL_HAVE -> "Скрыт: «Ещё есть»" to (FreshColors.TealSoft to FreshColors.TealText)
+        ReplenishmentStatus.HIDDEN_LATER -> "Скрыт: «Позже»" to (FreshColors.TealSoft to FreshColors.TealText)
     }
     Pill(text, colors.first, colors.second, Modifier.padding(top = 2.dp))
 }

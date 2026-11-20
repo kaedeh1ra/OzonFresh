@@ -9,7 +9,7 @@ data class Category(
 
 /**
  * Товар. [unit] — вес или объём для подписи («930 мл»), [price] — цена в рублях.
- * [emoji] и [tint] — картинка-заглушка: цветной блок с эмодзи, без чужих фото.
+ * [emoji] — картинка-заглушка вместо фото товара.
  */
 data class Product(
     val id: String,
@@ -18,7 +18,6 @@ data class Product(
     val unit: String,
     val price: Int,
     val emoji: String,
-    val tint: Long,
     val description: String = "",
 )
 

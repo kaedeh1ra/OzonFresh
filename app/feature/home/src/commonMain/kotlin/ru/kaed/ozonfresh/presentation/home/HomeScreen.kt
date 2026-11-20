@@ -1,29 +1,20 @@
 package ru.kaed.ozonfresh.presentation.home
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,24 +22,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import ru.kaed.ozonfresh.domain.model.Product
-import ru.kaed.ozonfresh.domain.model.formatLong
 import ru.kaed.ozonfresh.domain.model.rub
-import ru.kaed.ozonfresh.domain.model.weekdayShort
 import ru.kaed.ozonfresh.navigation.AppNavigator
 import ru.kaed.ozonfresh.navigation.Destinations
-import ru.kaed.ozonfresh.presentation.designsystem.components.NavIcon
-import ru.kaed.ozonfresh.presentation.designsystem.components.NavIconView
+import ru.kaed.ozonfresh.presentation.designsystem.components.CategoryIcon
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductCard
+import ru.kaed.ozonfresh.presentation.designsystem.components.SearchBar
 import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
+import ru.kaed.ozonfresh.presentation.designsystem.components.ShopHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.ShopSection
 import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.gridColumns
+import ru.kaed.ozonfresh.presentation.designsystem.components.sectionPart
 import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.home.HomeContract.Effect
@@ -87,7 +77,6 @@ internal fun HomeRoute(navigator: AppNavigator) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     state: State,
@@ -99,78 +88,19 @@ fun HomeScreen(
 ) {
     val padding = windowSize.contentPadding
     val columns = windowSize.gridColumns
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item(key = "header") {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    // Долгое нажатие на адрес — вход в демо-панель для защиты.
-                    .combinedClickable(onClick = {}, onLongClick = onOpenDemo, onLongClickLabel = "Демо-панель")
-                    .padding(horizontal = padding, vertical = 12.dp),
-            ) {
-                Text(
-                    "Доставим за 15–30 минут",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = FreshColors.Teal,
-                )
-                Text(
-                    "${state.address} ▾",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                state.today?.let {
-                    Text(
-                        "Сегодня ${it.weekdayShort()}, ${it.formatLong()}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
+    LazyColumn(Modifier.fillMaxSize().background(FreshColors.Canvas), contentPadding = PaddingValues(bottom = 8.dp)) {
+        // Долгое нажатие на адрес — вход в демо-панель для защиты.
+        item(key = "header") { ShopHeader(state.address, onLongPress = onOpenDemo) }
 
-        item(key = "search") {
-            Row(
-                Modifier
-                    .padding(horizontal = padding)
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable(onClick = onOpenSearch)
-                    .padding(horizontal = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                NavIconView(NavIcon.Search, MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp)
-                Text(
-                    "Искать продукты",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 10.dp),
-                )
-            }
-        }
-
-        item(key = "chips") {
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = padding),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 14.dp),
-            ) {
-                items(state.categories, key = { it.id }) { category ->
-                    Row(
-                        Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { onOpenCategory(category.id) }
-                            .padding(horizontal = 14.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(category.emoji)
-                        Text(
-                            category.title,
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(start = 6.dp),
-                        )
+        item(key = "top") {
+            ShopSection(onDark = true) {
+                SearchBar(Modifier.padding(horizontal = padding), onClick = onOpenSearch)
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = padding - 8.dp),
+                    modifier = Modifier.padding(top = 16.dp),
+                ) {
+                    items(state.categories, key = { it.id }) { category ->
+                        CategoryIcon(category.emoji, category.title, onClick = { onOpenCategory(category.id) })
                     }
                 }
             }
@@ -194,27 +124,33 @@ fun HomeScreen(
         }
 
         if (state.purchased.isNotEmpty()) {
-            item(key = "purchased-title") {
-                SectionTitle("Вы покупали", Modifier.padding(start = padding, end = padding, top = 24.dp, bottom = 10.dp))
-            }
             item(key = "purchased") {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = padding),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    items(state.purchased, key = { it.id }) { product ->
-                        ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.width(132.dp))
+                ShopSection {
+                    SectionTitle("Вы покупали", Modifier.padding(horizontal = padding))
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = padding),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(top = 14.dp),
+                    ) {
+                        items(state.purchased, key = { it.id }) { product ->
+                            ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.width(170.dp))
+                        }
                     }
                 }
             }
         }
 
         item(key = "hits-title") {
-            SectionTitle("Хиты недели", Modifier.padding(start = padding, end = padding, top = 24.dp, bottom = 10.dp))
+            SectionTitle(
+                "Хиты недели",
+                Modifier.sectionPart(top = true, bottom = false).padding(start = padding, end = padding, top = 20.dp, bottom = 14.dp),
+            )
         }
-        items(state.hits.chunked(columns), key = { row -> "hits-" + row.first().id }) { row ->
+        val rows = state.hits.chunked(columns)
+        itemsIndexed(rows, key = { _, row -> "hits-" + row.first().id }) { index, row ->
             Row(
-                Modifier.padding(horizontal = padding).padding(bottom = 12.dp),
+                Modifier.sectionPart(top = false, bottom = index == rows.lastIndex)
+                    .padding(start = padding, end = padding, bottom = if (index == rows.lastIndex) 16.dp else 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 row.forEach { product ->
@@ -239,7 +175,6 @@ private fun ShopProductCard(
         unit = product.unit,
         price = product.price.rub(),
         emoji = product.emoji,
-        tint = product.tint,
         quantity = state.inCart[product.id] ?: 0,
         onClick = { onOpenProduct(product.id) },
         onAdd = { onIntent(Intent.Add(product.id)) },

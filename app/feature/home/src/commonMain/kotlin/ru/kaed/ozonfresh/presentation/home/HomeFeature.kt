@@ -14,7 +14,7 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.NavIcon
 
 internal class HomePlugin : FeaturePlugin {
     override val routes = listOf(Destinations.HOME)
-    override val entry = FeatureEntry.Tab("Главная", NavIcon.Home, order = 0)
+    override val entry = FeatureEntry.Tab("Продукты", NavIcon.Products, order = 0)
 
     override fun NavGraphBuilder.register(host: FeatureHost) {
         screen(Destinations.HOME) { HomeRoute(host.navigator) }

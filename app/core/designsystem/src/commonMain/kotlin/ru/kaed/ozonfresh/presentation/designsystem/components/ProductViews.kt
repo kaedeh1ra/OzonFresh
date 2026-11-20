@@ -21,82 +21,109 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
-/** Картинка-заглушка товара: цветной блок с эмодзи. Своих фото нет, чужие не используем. */
+/** Картинка-заглушка товара: эмодзи на светлом фоне вместо фото. */
 @Composable
 fun ProductImage(
     emoji: String,
-    tint: Long,
     modifier: Modifier = Modifier,
-    emojiSize: TextUnit = 44.sp,
-    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
+    emojiSize: TextUnit = 64.sp,
+    shape: RoundedCornerShape = RoundedCornerShape(24.dp),
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
-    Box(modifier.clip(shape).background(Color(tint)), contentAlignment = Alignment.Center) {
+    Box(modifier.clip(shape).background(FreshColors.Card), contentAlignment = Alignment.Center) {
         Text(emoji, fontSize = emojiSize, textAlign = TextAlign.Center)
         overlay()
     }
 }
 
-/** «− 2 +» в розовой плашке. */
+/** «− 2 +» в бирюзовой плашке. */
 @Composable
 fun QuantityStepper(
     quantity: Int,
     onChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    height: Dp = 36.dp,
+    height: Dp = 40.dp,
 ) {
     Row(
-        modifier.height(height).clip(CircleShape).background(FreshColors.Pink),
+        modifier.height(height).clip(CircleShape).background(FreshColors.Teal),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        StepperButton("−", height) { onChange(quantity - 1) }
-        Text(
-            "$quantity",
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold,
-            style = MaterialTheme.typography.labelLarge,
-        )
-        StepperButton("+", height) { onChange(quantity + 1) }
+        StepperButton("−", "Убрать одну штуку", height) { onChange(quantity - 1) }
+        Text("$quantity", color = Color.White, style = MaterialTheme.typography.labelLarge)
+        StepperButton("+", "Добавить ещё одну", height) { onChange(quantity + 1) }
     }
 }
 
 @Composable
-private fun StepperButton(symbol: String, size: Dp, onClick: () -> Unit) {
+private fun StepperButton(symbol: String, label: String, size: Dp, onClick: () -> Unit) {
     Box(
-        Modifier.size(size).clip(CircleShape).clickable(role = Role.Button, onClick = onClick),
+        Modifier.size(size).clip(CircleShape).clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(symbol, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+        Text(symbol, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
     }
 }
 
-/** Круглая кнопка «+» поверх картинки товара. */
+/** Белая круглая кнопка с корзиной поверх картинки товара. */
 @Composable
-fun AddButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 36.dp) {
+fun BasketButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 48.dp) {
     Box(
-        modifier.size(size).clip(CircleShape).background(FreshColors.Pink)
-            .clickable(role = Role.Button, onClickLabel = "Добавить в корзину", onClick = onClick),
+        modifier.size(size).shadow(6.dp, CircleShape).clip(CircleShape).background(FreshColors.White)
+            .clickable(role = Role.Button, onClickLabel = "В корзину", onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text("+", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+        NavIconView(NavIcon.Cart, FreshColors.Ink, size = size * 0.5f)
     }
+}
+
+/** Розовый бейдж в углу картинки: «Пора пополнить», «−12%». */
+@Composable
+fun Badge(text: String, background: Color, modifier: Modifier = Modifier, content: Color = FreshColors.White) {
+    Text(
+        text,
+        color = content,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        modifier = modifier.clip(CircleShape).background(background).padding(horizontal = 9.dp, vertical = 3.dp),
+    )
+}
+
+/** Название и вес одной строкой: вес серым, как в карточках референса. */
+@Composable
+fun NameWithUnit(name: String, unit: String, modifier: Modifier = Modifier, lines: Int = 2) {
+    Text(
+        buildAnnotatedString {
+            append(name)
+            withStyle(SpanStyle(color = FreshColors.Muted)) { append("  $unit") }
+        },
+        style = MaterialTheme.typography.bodyLarge,
+        maxLines = lines,
+        minLines = lines,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier,
+    )
 }
 
 /**
- * Карточка товара для сеток и подборок: картинка, цена, название, вес или объём, кнопка «+».
- * Когда товар уже в корзине, вместо «+» показывается степпер.
+ * Карточка товара для сеток и подборок: картинка на светлом фоне, круглая кнопка корзины,
+ * цена, название с весом. Когда товар уже в корзине, вместо кнопки — степпер.
  */
 @Composable
 fun ProductCard(
@@ -104,17 +131,24 @@ fun ProductCard(
     unit: String,
     price: String,
     emoji: String,
-    tint: Long,
     quantity: Int,
     onClick: () -> Unit,
     onAdd: () -> Unit,
     onQuantityChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    tag: String? = null,
+    tagColor: Color = FreshColors.TealText,
 ) {
-    Column(modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick)) {
-        ProductImage(emoji, tint, Modifier.fillMaxWidth().aspectRatio(1f)) {
+    Column(modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick)) {
+        ProductImage(emoji, Modifier.fillMaxWidth().aspectRatio(1f)) {
+            NavIconView(
+                NavIcon.Heart,
+                FreshColors.Line,
+                Modifier.align(Alignment.TopEnd).padding(10.dp),
+                size = 26.dp,
+            )
             if (quantity == 0) {
-                AddButton(onAdd, Modifier.align(Alignment.BottomEnd).padding(8.dp))
+                BasketButton(onAdd, Modifier.align(Alignment.BottomEnd).padding(8.dp))
             } else {
                 QuantityStepper(
                     quantity,
@@ -125,55 +159,54 @@ fun ProductCard(
         }
         Text(
             price,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 8.dp, start = 2.dp),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(start = 4.dp, top = 10.dp),
         )
-        Text(
-            name,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 2.dp),
-        )
-        Text(
-            unit,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 2.dp, top = 2.dp, bottom = 4.dp),
-        )
+        if (tag != null) {
+            Text(
+                tag,
+                color = tagColor,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+            )
+        }
+        NameWithUnit(name, unit, Modifier.padding(start = 4.dp, end = 4.dp, top = 2.dp, bottom = 8.dp))
     }
 }
 
-/** Заголовок раздела на экране: «Вы покупали», «Хиты недели». */
+/** Заголовок секции: «Пора пополнить», «Вы покупали». */
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier, subtitle: String? = null) {
     Column(modifier) {
-        Text(text, style = MaterialTheme.typography.titleLarge)
+        Text(text, style = MaterialTheme.typography.headlineSmall)
         if (subtitle != null) {
             Text(
                 subtitle,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
     }
 }
 
-/** Маленькая цветная плашка: «Скоро закончится», «Из ленты». */
+/** Маленькая плашка на светлом фоне: «Из «Пора пополнить»», статусы в демо-панели. */
 @Composable
 fun Pill(text: String, background: Color, content: Color, modifier: Modifier = Modifier) {
     Text(
         text,
         color = content,
         style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         maxLines = 1,
         modifier = modifier.clip(CircleShape).background(background).padding(horizontal = 8.dp, vertical = 3.dp),
     )
 }
 
-/** Строка заголовка вложенного экрана: «‹ Назад» и название. */
+/** Строка заголовка вложенного экрана: «‹» и название. */
 @Composable
 fun ScreenHeader(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
     Row(
@@ -182,7 +215,8 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modi
     ) {
         if (onBack != null) {
             Box(
-                Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = "Назад", onClick = onBack),
+                Modifier.size(44.dp).clip(CircleShape)
+                    .clickable(role = Role.Button, onClickLabel = "Назад", onClick = onBack),
                 contentAlignment = Alignment.Center,
             ) {
                 NavIconView(NavIcon.Back, MaterialTheme.colorScheme.onSurface)

@@ -41,8 +41,10 @@ import ru.kaed.ozonfresh.domain.usecase.shop.OrderResult
 import ru.kaed.ozonfresh.domain.usecase.shop.PlaceOrderUseCase
 import ru.kaed.ozonfresh.navigation.AppNavigator
 import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.SheetScreen
 import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
+import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.mvi.CollectEffects
 import ru.kaed.ozonfresh.presentation.mvi.MviViewModel
 
@@ -122,7 +124,7 @@ fun CheckoutScreen(
     onBack: () -> Unit,
 ) {
     val padding = windowSize.contentPadding
-    Column(Modifier.fillMaxSize()) {
+    SheetScreen {
         ScreenHeader("Оформление заказа", onBack)
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = padding),
@@ -148,7 +150,7 @@ fun CheckoutScreen(
                     }
                 }
             }
-            SummaryCard(state.summary)
+            SummaryCard(state.summary, Modifier.clip(RoundedCornerShape(24.dp)).background(FreshColors.Card).padding(16.dp))
             Text(
                 "Прототип: оплата не списывается, заказ сразу считается доставленным.",
                 style = MaterialTheme.typography.bodySmall,

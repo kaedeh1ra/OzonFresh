@@ -13,9 +13,9 @@ import ru.kaed.ozonfresh.presentation.app.App
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Фон приложения всегда белый: тёмные иконки статус-бара даже в тёмной теме системы.
+        // Под статус-баром всегда тёмная шапка: светлые иконки при любой теме системы.
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.WHITE, Color.WHITE),
         )
         super.onCreate(savedInstanceState)

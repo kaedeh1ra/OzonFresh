@@ -11,65 +11,85 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Палитра прототипа: белый фон, розовый акцент, бирюзовый второй цвет, тёмно-зелёный текст, светло-серые карточки. */
+/**
+ * Палитра в духе приложения Ozon fresh (цвета сняты со скриншотов): тёмная шапка, серый фон между
+ * белыми секциями, бирюзовые кнопки, розовые бейджи. Ассеты бренда (логотип, фото) не используются.
+ */
 object FreshColors {
-    val Pink = Color(0xFFE5336F)
-    val PinkSoft = Color(0xFFFDE8EF)
-    val PinkDark = Color(0xFFB81E53)
-    val Teal = Color(0xFF2A9690)
-    val TealSoft = Color(0xFFE5F4F2)
-    val TealDark = Color(0xFF1C6E69)
-    val Ink = Color(0xFF0F3B3A)
-    val Muted = Color(0xFF5E7675)
-    val Card = Color(0xFFF2F5F5)
-    val Line = Color(0xFFE3E9E9)
+    /** Шапка с адресом и полоса статус-бара. */
+    val Dark = Color(0xFF070707)
+    val DarkButton = Color(0xFF1D2025)
+
+    /** Фон между белыми секциями. */
+    val Canvas = Color(0xFFEEF2F5)
+
+    /** Поиск, плитки категорий, фон картинок товаров. */
+    val Card = Color(0xFFF6F7FB)
+    val Line = Color(0xFFE6E9EE)
+
+    val Teal = Color(0xFF00C2C2)
+    /** Бирюзовый для текста на белом: основной слишком светлый для мелких надписей. */
+    val TealText = Color(0xFF00898A)
+    val TealSoft = Color(0xFFE0F7F6)
+
+    val Pink = Color(0xFFFF4A91)
+    val PinkSoft = Color(0xFFFFE8F1)
+    val PinkDark = Color(0xFFD81B66)
+    val Red = Color(0xFFF2453D)
+
+    val Ink = Color(0xFF0F0F0F)
+    val Muted = Color(0xFF7C838D)
+    val NavInactive = Color(0xFF9AA0A8)
     val White = Color.White
 }
 
 private val LightColors = lightColorScheme(
-    primary = FreshColors.Pink,
+    primary = FreshColors.Teal,
     onPrimary = FreshColors.White,
-    primaryContainer = FreshColors.PinkSoft,
-    onPrimaryContainer = FreshColors.PinkDark,
-    secondary = FreshColors.Teal,
+    primaryContainer = FreshColors.TealSoft,
+    onPrimaryContainer = FreshColors.TealText,
+    secondary = FreshColors.Pink,
     onSecondary = FreshColors.White,
-    secondaryContainer = FreshColors.TealSoft,
-    onSecondaryContainer = FreshColors.TealDark,
-    tertiary = FreshColors.Teal,
-    background = FreshColors.White,
+    secondaryContainer = FreshColors.PinkSoft,
+    onSecondaryContainer = FreshColors.PinkDark,
+    tertiary = FreshColors.TealText,
+    background = FreshColors.Canvas,
     onBackground = FreshColors.Ink,
     surface = FreshColors.White,
     onSurface = FreshColors.Ink,
     surfaceVariant = FreshColors.Card,
     onSurfaceVariant = FreshColors.Muted,
     surfaceContainerLowest = FreshColors.White,
-    surfaceContainerLow = Color(0xFFF8FAFA),
-    surfaceContainer = FreshColors.Card,
-    surfaceContainerHigh = Color(0xFFEDF1F1),
-    surfaceContainerHighest = Color(0xFFE7ECEC),
-    outline = Color(0xFFB9C6C5),
+    surfaceContainerLow = FreshColors.White,
+    surfaceContainer = FreshColors.White,
+    surfaceContainerHigh = FreshColors.White,
+    surfaceContainerHighest = FreshColors.Card,
+    outline = Color(0xFFC3C8CF),
     outlineVariant = FreshColors.Line,
+    error = FreshColors.Red,
 )
 
 private val FreshShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
     small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(24.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp),
 )
 
 private val FreshTypography = Typography().run {
     copy(
-        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.Bold, fontSize = 24.sp),
-        titleLarge = titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 21.sp),
-        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold),
-        titleSmall = titleSmall.copy(fontWeight = FontWeight.SemiBold),
-        labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold),
+        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 30.sp),
+        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 26.sp),
+        titleLarge = titleLarge.copy(fontWeight = FontWeight.ExtraBold, fontSize = 22.sp),
+        titleMedium = titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 17.sp),
+        titleSmall = titleSmall.copy(fontWeight = FontWeight.Bold),
+        labelLarge = labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+        bodyLarge = bodyLarge.copy(fontSize = 16.sp),
     )
 }
 
-/** Светлая тема: интерфейс магазина сознательно один, как у референса. */
+/** Светлая тема магазина: одна, как у референса. */
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
     MaterialTheme(

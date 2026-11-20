@@ -1,32 +1,20 @@
 package ru.kaed.ozonfresh.presentation.catalog
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavGraphBuilder
@@ -44,19 +32,28 @@ import ru.kaed.ozonfresh.domain.usecase.shop.AddToCartUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ChangeCartQuantityUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.GetCatalogUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.ObserveCartUseCase
+import ru.kaed.ozonfresh.domain.usecase.shop.ObserveTodayUseCase
 import ru.kaed.ozonfresh.navigation.AppNavigator
 import ru.kaed.ozonfresh.navigation.Destinations
 import ru.kaed.ozonfresh.navigation.FeatureEntry
 import ru.kaed.ozonfresh.navigation.FeatureHost
 import ru.kaed.ozonfresh.navigation.FeaturePlugin
 import ru.kaed.ozonfresh.navigation.screen
+import ru.kaed.ozonfresh.presentation.designsystem.components.CategoryTile
 import ru.kaed.ozonfresh.presentation.designsystem.components.MessageState
 import ru.kaed.ozonfresh.presentation.designsystem.components.NavIcon
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductCard
 import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.SearchBar
+import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
+import ru.kaed.ozonfresh.presentation.designsystem.components.SheetScreen
+import ru.kaed.ozonfresh.presentation.designsystem.components.ShopHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.ShopSection
 import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.gridColumns
+import ru.kaed.ozonfresh.presentation.designsystem.components.sectionPart
 import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
+import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.mvi.MviViewModel
 
 /** Каталог: простой — поиск, плитки разделов и сетка товаров раздела. */
@@ -78,6 +75,7 @@ object CatalogContract {
         val products: List<Product> = emptyList(),
         val query: String = "",
         val inCart: Map<String, Int> = emptyMap(),
+        val address: String = "",
     ) {
         fun productsIn(categoryId: String) = products.filter { it.categoryId == categoryId }
         val searchResults: List<Product>
@@ -93,11 +91,12 @@ object CatalogContract {
 
 class CatalogViewModel(
     catalog: GetCatalogUseCase,
+    today: ObserveTodayUseCase,
     observeCart: ObserveCartUseCase,
     private val addToCart: AddToCartUseCase,
     private val changeQuantity: ChangeCartQuantityUseCase,
 ) : MviViewModel<CatalogContract.State, CatalogContract.Intent, Nothing>(
-    CatalogContract.State(categories = catalog.categories, products = catalog.products),
+    CatalogContract.State(categories = catalog.categories, products = catalog.products, address = today.address),
 ) {
     init {
         observeCart().onEach { cart ->
@@ -140,67 +139,59 @@ fun CatalogScreen(
     val padding = windowSize.contentPadding
     val columns = windowSize.gridColumns
     val category = state.categories.firstOrNull { it.id == categoryId }
-    Column(Modifier.fillMaxSize()) {
-        if (category != null) {
-            ScreenHeader("${category.emoji} ${category.title}", onBack)
-        } else {
-            Text(
-                "Каталог",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(start = padding, end = padding, top = 16.dp, bottom = 8.dp),
-            )
-            OutlinedTextField(
-                value = state.query,
-                onValueChange = { onIntent(CatalogContract.Intent.Search(it)) },
-                placeholder = { Text("Искать продукты") },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = padding),
-            )
+    if (category != null) {
+        // Раздел открыт поверх каталога: белый лист с заголовком и сеткой товаров.
+        SheetScreen {
+            ScreenHeader(category.title, onBack)
+            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp)) {
+                productGrid(state.productsIn(category.id), columns, state, onIntent, onOpenProduct, padding)
+            }
         }
+        return
+    }
+    LazyColumn(Modifier.fillMaxSize().background(FreshColors.Canvas)) {
+        item(key = "header") { ShopHeader(state.address) }
+        item(key = "search") {
+            ShopSection(onDark = true) {
+                SearchBar(
+                    Modifier.padding(horizontal = padding),
+                    value = state.query,
+                    onValueChange = { onIntent(CatalogContract.Intent.Search(it)) },
+                )
+            }
+        }
+        when {
+            state.query.isNotBlank() && state.searchResults.isEmpty() -> item(key = "empty") {
+                ShopSection { MessageState("Ничего не нашли", description = "Попробуйте другое слово") }
+            }
 
-        LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)) {
-            when {
-                category != null -> productGrid(state.productsIn(category.id), columns, state, onIntent, onOpenProduct, padding)
-                state.query.isNotBlank() && state.searchResults.isEmpty() -> item {
-                    MessageState("Ничего не нашли", description = "Попробуйте другое слово")
+            state.query.isNotBlank() -> {
+                item(key = "results-title") {
+                    SectionTitle(
+                        "Нашли ${state.searchResults.size}",
+                        Modifier.sectionPart(top = true, bottom = false).padding(start = padding, end = padding, top = 20.dp, bottom = 14.dp),
+                    )
                 }
+                productGrid(state.searchResults, columns, state, onIntent, onOpenProduct, padding, inSection = true)
+            }
 
-                state.query.isNotBlank() -> productGrid(state.searchResults, columns, state, onIntent, onOpenProduct, padding)
-                else -> items(state.categories.chunked(2), key = { it.first().id }) { row ->
-                    Row(
-                        Modifier.padding(horizontal = padding).padding(bottom = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        row.forEach { item ->
-                            CategoryTile(item, Modifier.weight(1f)) { onOpenCategory(item.id) }
+            else -> item(key = "categories") {
+                ShopSection {
+                    SectionTitle("Продукты", Modifier.padding(horizontal = padding))
+                    state.categories.chunked(3).forEach { row ->
+                        Row(
+                            Modifier.padding(horizontal = padding).padding(top = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            row.forEach { item ->
+                                CategoryTile(item.title, item.emoji, { onOpenCategory(item.id) }, Modifier.weight(1f))
+                            }
+                            repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
-                        repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun CategoryTile(category: Category, modifier: Modifier, onClick: () -> Unit) {
-    Column(
-        modifier
-            .height(96.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onClick)
-            .padding(14.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(category.title, style = MaterialTheme.typography.titleSmall)
-        Text(category.emoji, fontSize = 30.sp, modifier = Modifier.align(Alignment.End))
     }
 }
 
@@ -211,10 +202,14 @@ private fun LazyListScope.productGrid(
     onIntent: (CatalogContract.Intent) -> Unit,
     onOpenProduct: (String) -> Unit,
     padding: Dp,
+    inSection: Boolean = false,
 ) {
-    items(products.chunked(columns), key = { "grid-" + it.first().id }) { row ->
+    val rows = products.chunked(columns)
+    itemsIndexed(rows, key = { _, row -> "grid-" + row.first().id }) { index, row ->
+        val last = index == rows.lastIndex
         Row(
-            Modifier.padding(horizontal = padding).padding(bottom = 12.dp),
+            (if (inSection) Modifier.sectionPart(top = false, bottom = last) else Modifier)
+                .padding(start = padding, end = padding, bottom = if (last) 16.dp else 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             row.forEach { product ->
@@ -223,7 +218,6 @@ private fun LazyListScope.productGrid(
                     unit = product.unit,
                     price = product.price.rub(),
                     emoji = product.emoji,
-                    tint = product.tint,
                     quantity = state.inCart[product.id] ?: 0,
                     onClick = { onOpenProduct(product.id) },
                     onAdd = { onIntent(CatalogContract.Intent.Add(product.id)) },

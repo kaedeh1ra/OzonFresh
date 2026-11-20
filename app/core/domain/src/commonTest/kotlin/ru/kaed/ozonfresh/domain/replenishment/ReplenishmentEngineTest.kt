@@ -20,7 +20,6 @@ class ReplenishmentEngineTest {
         unit = "930 мл",
         price = 99,
         emoji = "🥛",
-        tint = 0xFFE8F1FF,
     )
     private val products = listOf(milk)
     private val inStock = listOf(Stock("milk", 20))

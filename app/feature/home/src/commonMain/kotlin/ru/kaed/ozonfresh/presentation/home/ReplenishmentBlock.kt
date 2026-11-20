@@ -1,11 +1,11 @@
 package ru.kaed.ozonfresh.presentation.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -26,20 +26,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ru.kaed.ozonfresh.domain.model.Day
 import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.replenishment.ReplenishmentItem
-import ru.kaed.ozonfresh.presentation.designsystem.components.Pill
+import ru.kaed.ozonfresh.presentation.designsystem.components.Badge
+import ru.kaed.ozonfresh.presentation.designsystem.components.NameWithUnit
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductImage
 import ru.kaed.ozonfresh.presentation.designsystem.components.QuantityStepper
+import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
+import ru.kaed.ozonfresh.presentation.designsystem.components.ShopSection
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
-private val CARD_WIDTH = 172.dp
+private val CARD_WIDTH = 176.dp
 
 /**
- * Блок «Пора пополнить»: выше обычных подборок, на бирюзовом фоне, чтобы отличаться от рекламы.
- * Только подсказки: «Добавить» кладёт товар в обычную корзину, цена обычная, без подписок и скидок.
+ * Блок «Пора пополнить»: белая секция выше обычных подборок. Только подсказки: «Добавить» кладёт
+ * товар в обычную корзину, цена обычная, без подписок и скидок.
  */
 @Composable
 internal fun ReplenishmentBlock(
@@ -53,26 +55,16 @@ internal fun ReplenishmentBlock(
     onStillHave: (ReplenishmentItem) -> Unit,
     onLater: (ReplenishmentItem) -> Unit,
 ) {
-    Column(
-        Modifier
-            .padding(horizontal = horizontalPadding)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(FreshColors.TealSoft)
-            .padding(vertical = 16.dp),
-    ) {
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            Text("Пора пополнить", style = MaterialTheme.typography.titleLarge, color = FreshColors.Ink)
-            Text(
-                "Подобрали по вашим прошлым заказам",
-                style = MaterialTheme.typography.bodyMedium,
-                color = FreshColors.TealDark,
-            )
-        }
+    ShopSection {
+        SectionTitle(
+            "Пора пополнить",
+            Modifier.padding(horizontal = horizontalPadding),
+            subtitle = "Подобрали по вашим прошлым заказам",
+        )
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.padding(top = 12.dp),
+            contentPadding = PaddingValues(horizontal = horizontalPadding),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(top = 14.dp),
         ) {
             items(items, key = { it.product.id }) { item ->
                 ReplenishmentCard(
@@ -103,54 +95,30 @@ private fun ReplenishmentCard(
 ) {
     val product = item.product
     val overdue = item.daysUntilDue(today) <= 0
-    Column(
-        Modifier
-            .width(CARD_WIDTH)
-            .clip(RoundedCornerShape(20.dp))
-            .background(FreshColors.White)
-            .padding(10.dp),
-    ) {
-        Column(Modifier.clip(RoundedCornerShape(14.dp)).clickable(onClick = onOpen)) {
-            ProductImage(
-                product.emoji,
-                product.tint,
-                Modifier.fillMaxWidth().height(96.dp),
-                emojiSize = 40.sp,
-                shape = RoundedCornerShape(14.dp),
-            ) {
-                Pill(
+    Column(Modifier.width(CARD_WIDTH)) {
+        Column(Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onOpen)) {
+            ProductImage(product.emoji, Modifier.fillMaxWidth().aspectRatio(1f)) {
+                Badge(
                     text = if (overdue) "Пора пополнить" else "Скоро закончится",
                     background = if (overdue) FreshColors.Pink else FreshColors.Teal,
-                    content = FreshColors.White,
-                    modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
+                    modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
                 )
             }
             Text(
                 product.price.rub(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-            Text(
-                product.name,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-                minLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                product.unit,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 4.dp, top = 10.dp),
             )
             Text(
                 "Берёте раз в ${item.forecast.intervalDays} дн.",
-                style = MaterialTheme.typography.bodySmall,
-                color = FreshColors.TealDark,
+                color = FreshColors.TealText,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp),
             )
+            NameWithUnit(product.name, product.unit, Modifier.padding(start = 4.dp, end = 4.dp, top = 2.dp))
         }
 
         if (quantity == 0) {
@@ -158,15 +126,15 @@ private fun ReplenishmentCard(
                 onClick = onAdd,
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.padding(top = 10.dp).fillMaxWidth().height(36.dp),
+                modifier = Modifier.padding(top = 10.dp).fillMaxWidth().height(44.dp),
             ) {
                 Text("Добавить")
             }
         } else {
-            QuantityStepper(quantity, onQuantityChange, Modifier.padding(top = 10.dp).fillMaxWidth())
+            QuantityStepper(quantity, onQuantityChange, Modifier.padding(top = 10.dp).fillMaxWidth(), height = 44.dp)
         }
 
-        Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             SmallAction("Ещё есть", onStillHave)
             SmallAction("Позже", onLater)
         }
@@ -177,9 +145,9 @@ private fun ReplenishmentCard(
 private fun SmallAction(text: String, onClick: () -> Unit) {
     TextButton(
         onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
-        modifier = Modifier.height(36.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+        modifier = Modifier.height(40.dp),
     ) {
-        Text(text, color = FreshColors.TealDark, style = MaterialTheme.typography.labelLarge)
+        Text(text, color = FreshColors.Muted, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
     }
 }

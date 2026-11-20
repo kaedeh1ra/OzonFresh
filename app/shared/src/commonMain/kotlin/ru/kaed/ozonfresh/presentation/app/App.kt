@@ -3,15 +3,20 @@ package ru.kaed.ozonfresh.presentation.app
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -29,10 +34,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import org.koin.compose.getKoin
+import org.koin.compose.koinInject
+import ru.kaed.ozonfresh.domain.model.rub
+import ru.kaed.ozonfresh.domain.usecase.shop.CartSummary
+import ru.kaed.ozonfresh.domain.usecase.shop.FREE_DELIVERY_FROM
+import ru.kaed.ozonfresh.domain.usecase.shop.ObserveCartUseCase
 import ru.kaed.ozonfresh.navigation.AppNavigator
 import ru.kaed.ozonfresh.navigation.Destinations
 import ru.kaed.ozonfresh.navigation.FeatureEntry
@@ -42,9 +57,7 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.LocalWindowSize
 import ru.kaed.ozonfresh.presentation.designsystem.components.NavIconView
 import ru.kaed.ozonfresh.presentation.designsystem.components.WindowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.AppTheme
-import org.koin.compose.getKoin
-import org.koin.compose.koinInject
-import ru.kaed.ozonfresh.domain.usecase.shop.ObserveCartUseCase
+import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
 private const val NAV_FADE_MS = 150
 
@@ -67,7 +80,7 @@ fun App(navController: NavHostController = rememberNavController()) {
             }
         }
         val observeCart = koinInject<ObserveCartUseCase>()
-        val cartCount by remember(observeCart) { observeCart.count() }.collectAsState(0)
+        val cart by remember(observeCart) { observeCart() }.collectAsState(CartSummary(emptyList()))
         val backStackEntry by navController.currentBackStackEntryAsState()
         val route = backStackEntry?.destination?.route
         // Экран, открытый поверх раздела, подсвечивает вкладку своего раздела.
@@ -77,7 +90,8 @@ fun App(navController: NavHostController = rememberNavController()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             CompositionLocalProvider(LocalWindowSize provides WindowSize.forWidth(maxWidth)) {
                 Scaffold(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    // Тёмная полоса под статус-баром, как у референса; экраны рисуют свой фон сами.
+                    containerColor = FreshColors.Dark,
                     topBar = {
                         // Экраны магазина рисуют заголовки сами; панель нужна только для служебных ссылок.
                         if (links.isNotEmpty()) {
@@ -96,27 +110,31 @@ fun App(navController: NavHostController = rememberNavController()) {
                                 route !in currentPlugin.fullScreenRoutes
                         // Одна вкладка — навигация не нужна; появится, когда фича объявит вторую.
                         if (tabs.size > 1 && onTabScreen) {
-                            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                                tabs.forEach { (plugin, tab) ->
-                                    val selected = section == plugin.section
-                                    NavigationBarItem(
-                                        selected = selected,
-                                        onClick = { navigator.open(plugin.section) },
-                                        icon = {
-                                            val badge = if (plugin.section == Destinations.CART) cartCount else 0
-                                            BadgedBox(badge = {
-                                                if (badge > 0) Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("$badge") }
-                                            }) {
-                                                NavIconView(tab.icon, LocalContentColor.current)
-                                            }
-                                        },
-                                        label = { Text(tab.label) },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                        ),
-                                    )
+                            Column(Modifier.background(FreshColors.Canvas)) {
+                                DeliveryBar(cart)
+                                NavigationBar(containerColor = FreshColors.White, tonalElevation = 0.dp) {
+                                    tabs.forEach { (plugin, tab) ->
+                                        NavigationBarItem(
+                                            selected = section == plugin.section,
+                                            onClick = { navigator.open(plugin.section) },
+                                            icon = {
+                                                val badge = if (plugin.section == Destinations.CART) cart.count else 0
+                                                BadgedBox(badge = {
+                                                    if (badge > 0) Badge(containerColor = FreshColors.Pink) { Text("$badge") }
+                                                }) {
+                                                    NavIconView(tab.icon, LocalContentColor.current, size = 28.dp)
+                                                }
+                                            },
+                                            label = { Text(tab.label, style = MaterialTheme.typography.bodyMedium) },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                selectedIconColor = FreshColors.Ink,
+                                                selectedTextColor = FreshColors.Ink,
+                                                unselectedIconColor = FreshColors.NavInactive,
+                                                unselectedTextColor = FreshColors.NavInactive,
+                                                indicatorColor = Color.Transparent,
+                                            ),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -138,6 +156,29 @@ fun App(navController: NavHostController = rememberNavController()) {
             }
         }
     }
+}
+
+/** Плашка над навигацией: сколько осталось до бесплатной доставки. */
+@Composable
+private fun DeliveryBar(cart: CartSummary) {
+    val text = when {
+        cart.items.isEmpty() -> "Бесплатная доставка от ${FREE_DELIVERY_FROM.rub()}"
+        cart.deliveryFee > 0 -> "Корзина ${cart.itemsTotal.rub()}  •  ещё ${(FREE_DELIVERY_FROM - cart.itemsTotal).rub()} до бесплатной доставки"
+        else -> "Корзина ${cart.itemsTotal.rub()}  •  доставка бесплатно"
+    }
+    Text(
+        text,
+        color = FreshColors.Muted,
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(FreshColors.White)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    )
+    HorizontalDivider(color = FreshColors.Line, modifier = Modifier.background(FreshColors.White).padding(horizontal = 16.dp))
 }
 
 @Composable
