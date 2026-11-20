@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>KMP Template</title>
+    <link href="styles.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<!-- Первая загрузка wasm тяжёлая: показываем экран загрузки, пока Compose не отрисовал приложение. -->
+<div aria-live="polite" id="app-loader" role="status">
+    <div class="loader-spinner"></div>
+</div>
+<script>
+    (function () {
+        var loader = document.getElementById("app-loader");
+        // ComposeViewport добавляет в body свой контейнер: как только он появился, убираем лоадер.
+        new MutationObserver(function (mutations, observer) {
+            var added = mutations.some(function (m) {
+                return Array.prototype.some.call(m.addedNodes, function (n) {
+                    return n.nodeType === 1 && n.tagName !== "SCRIPT" && n !== loader;
+                });
+            });
+            if (!added) return;
+            observer.disconnect();
+            requestAnimationFrame(function () { requestAnimationFrame(function () { loader.remove(); }); });
+        }).observe(document.body, { childList: true });
+    })();
+</script>
+<script src="webApp.js" type="application/javascript"></script>
+</body>
+</html>

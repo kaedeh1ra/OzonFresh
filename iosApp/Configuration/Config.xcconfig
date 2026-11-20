@@ -1,0 +1,12 @@
+// Настройки iOS-приложения. rename.sh / rename.ps1 меняют здесь имя и bundle id.
+// TEAM_ID — ваш Apple Developer Team ID (Xcode → Signing & Capabilities); для симулятора не нужен.
+TEAM_ID=
+
+PRODUCT_NAME=KmpTemplate
+PRODUCT_BUNDLE_IDENTIFIER=com.example.app
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0
+
+// Адрес API, попадает в Info.plist (ключ API_BASE_URL). // в URL xcconfig считает комментарием, отсюда $()
+API_BASE_URL=https:/$()/example.com/
