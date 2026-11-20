@@ -58,3 +58,31 @@ enum class ExperimentGroup(val title: String) {
     TEST("Тест"),
     CONTROL("Контроль"),
 }
+
+/** События пилота: из них считаются метрики (показы, клики по кнопкам, оплаты с товарами из ленты). */
+enum class PilotEventType(val title: String) {
+    FEED_SHOWN("Показ ленты"),
+    FEED_HIDDEN_CONTROL("Лента скрыта (контроль)"),
+    ADD("Добавить"),
+    STILL_HAVE("Ещё есть"),
+    LATER("Позже"),
+    ORDER_WITH_FEED("Оплата с товарами из ленты"),
+    ORDER("Оплата заказа"),
+    OUT_OF_STOCK_AT_CHECKOUT("Закончился перед оплатой"),
+}
+
+data class PilotEvent(
+    val id: Int,
+    val day: Day,
+    val type: PilotEventType,
+    val group: ExperimentGroup,
+    val details: String,
+    val episode: Int? = null,
+)
+
+/** «1 290 ₽»: разряды через неразрывный пробел. */
+fun Int.rub(): String {
+    val digits = toString()
+    val grouped = digits.reversed().chunked(3).joinToString("\u00A0").reversed()
+    return "$grouped\u00A0₽"
+}
