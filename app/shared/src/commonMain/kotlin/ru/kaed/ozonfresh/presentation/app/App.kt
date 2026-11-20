@@ -7,18 +7,23 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +43,8 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.NavIconView
 import ru.kaed.ozonfresh.presentation.designsystem.components.WindowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.AppTheme
 import org.koin.compose.getKoin
+import org.koin.compose.koinInject
+import ru.kaed.ozonfresh.domain.usecase.shop.ObserveCartUseCase
 
 private const val NAV_FADE_MS = 150
 
@@ -59,6 +66,8 @@ fun App(navController: NavHostController = rememberNavController()) {
                 override val navigator: AppNavigator = navigator
             }
         }
+        val observeCart = koinInject<ObserveCartUseCase>()
+        val cartCount by remember(observeCart) { observeCart.count() }.collectAsState(0)
         val backStackEntry by navController.currentBackStackEntryAsState()
         val route = backStackEntry?.destination?.route
         // Экран, открытый поверх раздела, подсвечивает вкладку своего раздела.
@@ -68,32 +77,45 @@ fun App(navController: NavHostController = rememberNavController()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             CompositionLocalProvider(LocalWindowSize provides WindowSize.forWidth(maxWidth)) {
                 Scaffold(
+                    containerColor = MaterialTheme.colorScheme.background,
                     topBar = {
-                        TopAppBar(
-                            title = { Text(currentPlugin?.entry?.label.orEmpty()) },
-                            actions = {
-                                if (links.isNotEmpty()) {
+                        // Экраны магазина рисуют заголовки сами; панель нужна только для служебных ссылок.
+                        if (links.isNotEmpty()) {
+                            TopAppBar(
+                                title = { Text(currentPlugin?.entry?.label.orEmpty()) },
+                                actions = {
                                     OverflowMenu(links.map { (plugin, link) ->
-                                        link.label to {
-                                            navigator.open(
-                                                plugin.section
-                                            )
-                                        }
+                                        link.label to { navigator.open(plugin.section) }
                                     })
-                                }
-                            },
-                        )
+                                },
+                            )
+                        }
                     },
                     bottomBar = {
+                        val onTabScreen = currentPlugin?.entry is FeatureEntry.Tab &&
+                                route !in currentPlugin.fullScreenRoutes
                         // Одна вкладка — навигация не нужна; появится, когда фича объявит вторую.
-                        if (tabs.size > 1) {
-                            NavigationBar {
+                        if (tabs.size > 1 && onTabScreen) {
+                            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                                 tabs.forEach { (plugin, tab) ->
+                                    val selected = section == plugin.section
                                     NavigationBarItem(
-                                        selected = section == plugin.section,
+                                        selected = selected,
                                         onClick = { navigator.open(plugin.section) },
-                                        icon = { NavIconView(tab.icon, LocalContentColor.current) },
+                                        icon = {
+                                            val badge = if (plugin.section == Destinations.CART) cartCount else 0
+                                            BadgedBox(badge = {
+                                                if (badge > 0) Badge { Text("$badge") }
+                                            }) {
+                                                NavIconView(tab.icon, LocalContentColor.current)
+                                            }
+                                        },
                                         label = { Text(tab.label) },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                        ),
                                     )
                                 }
                             }
@@ -156,6 +178,18 @@ private class ShellNavigator(private val navController: NavHostController) : App
             navController.popBackStack()
         } else {
             open(parent)
+        }
+    }
+
+    override fun up() {
+        if (navController.previousBackStackEntry != null) navController.popBackStack() else open(Destinations.HOME)
+    }
+
+    override fun openClean(section: String) {
+        navController.navigate(section) {
+            popUpTo(Destinations.HOME) { saveState = false }
+            launchSingleTop = true
+            restoreState = false
         }
     }
 }

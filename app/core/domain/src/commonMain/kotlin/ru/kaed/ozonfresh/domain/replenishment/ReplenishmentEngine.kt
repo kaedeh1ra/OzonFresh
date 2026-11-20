@@ -67,7 +67,7 @@ class ReplenishmentEngine {
             val hiddenUntil = actual?.hiddenUntil
             // Скрытие кнопкой проверяется первым: в демо-панели видно, почему товара нет.
             val status = when {
-                hiddenUntil != null && today < hiddenUntil -> when (actual?.hiddenBy) {
+                hiddenUntil != null && today < hiddenUntil -> when (actual.hiddenBy) {
                     FeedbackKind.LATER -> ReplenishmentStatus.HIDDEN_LATER
                     else -> ReplenishmentStatus.HIDDEN_STILL_HAVE
                 }

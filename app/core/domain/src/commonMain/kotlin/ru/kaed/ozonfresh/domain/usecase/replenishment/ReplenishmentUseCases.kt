@@ -112,14 +112,14 @@ class AddFromFeedUseCase(
     }
 }
 
-/** «Ещё есть»: скрыть товар и удлинить срок на половину интервала. */
+/** «Ещё есть»: скрыть товар и удлинить срок на половину интервала. Возвращает новый срок. */
 class StillHaveUseCase(
     private val engine: ReplenishmentEngine,
     private val feedback: ReplenishmentFeedbackRepository,
     private val events: PilotEventRepository,
     private val settings: DemoSettingsRepository,
 ) {
-    operator fun invoke(item: ReplenishmentItem) {
+    operator fun invoke(item: ReplenishmentItem): Day {
         val today = settings.today.value
         val answer = engine.stillHave(today, item, feedback.feedback.value[item.product.id])
         feedback.put(answer)
@@ -130,17 +130,18 @@ class StillHaveUseCase(
             settings.group.value,
             "${item.product.name}: срок ${item.dueDate.formatLong()} → ${newDue.formatLong()}",
         )
+        return newDue
     }
 }
 
-/** «Позже»: скрыть товар на 2 дня, срок прежний. */
+/** «Позже»: скрыть товар на 2 дня, срок прежний. Возвращает день, когда товар вернётся. */
 class LaterUseCase(
     private val engine: ReplenishmentEngine,
     private val feedback: ReplenishmentFeedbackRepository,
     private val events: PilotEventRepository,
     private val settings: DemoSettingsRepository,
 ) {
-    operator fun invoke(item: ReplenishmentItem) {
+    operator fun invoke(item: ReplenishmentItem): Day {
         val today = settings.today.value
         val answer = engine.later(today, item, feedback.feedback.value[item.product.id])
         feedback.put(answer)
@@ -150,5 +151,6 @@ class LaterUseCase(
             settings.group.value,
             "${item.product.name}: скрыт до ${answer.hiddenUntil?.formatLong()}",
         )
+        return answer.hiddenUntil ?: today
     }
 }
