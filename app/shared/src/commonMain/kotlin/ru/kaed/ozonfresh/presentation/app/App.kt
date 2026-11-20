@@ -5,12 +5,13 @@ import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,8 +23,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -46,8 +50,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavBackStackEntry
@@ -59,6 +65,7 @@ import org.koin.compose.getKoin
 import org.koin.compose.koinInject
 import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.usecase.shop.CartSummary
+import ru.kaed.ozonfresh.domain.usecase.shop.DELIVERY_FEE
 import ru.kaed.ozonfresh.domain.usecase.shop.FREE_DELIVERY_FROM
 import ru.kaed.ozonfresh.domain.usecase.shop.ObserveCartUseCase
 import ru.kaed.ozonfresh.navigation.AppNavigator
@@ -66,8 +73,13 @@ import ru.kaed.ozonfresh.navigation.Destinations
 import ru.kaed.ozonfresh.navigation.FeatureEntry
 import ru.kaed.ozonfresh.navigation.FeatureHost
 import ru.kaed.ozonfresh.navigation.FeaturePlugin
+import ru.kaed.ozonfresh.navigation.LocalScreenFrame
+import ru.kaed.ozonfresh.navigation.ScreenFrame
 import ru.kaed.ozonfresh.presentation.designsystem.components.LocalWindowSize
+import ru.kaed.ozonfresh.presentation.designsystem.components.LocalWindowWidth
+import ru.kaed.ozonfresh.presentation.designsystem.components.NavIcon
 import ru.kaed.ozonfresh.presentation.designsystem.components.NavIconView
+import ru.kaed.ozonfresh.presentation.designsystem.components.READABLE_WIDTH
 import ru.kaed.ozonfresh.presentation.designsystem.components.WindowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.AppTheme
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
@@ -75,8 +87,7 @@ import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 private const val NAV_FADE_MS = 150
 private const val SHEET_MS = 320
 
-/** Раздел под открытой шторкой чуть уменьшается и тускнеет. */
-private const val BEHIND_SCALE = 0.94f
+/** Раздел под открытой шторкой тускнеет на тёмном фоне оболочки. */
 private const val BEHIND_ALPHA = 0.6f
 
 /** Шторка — любой экран, кроме самих вкладок. */
@@ -101,20 +112,56 @@ fun App(navController: NavHostController = rememberNavController()) {
             }
         }
         val observeCart = koinInject<ObserveCartUseCase>()
-        val cart by remember(observeCart) { observeCart() }.collectAsState(CartSummary(emptyList()))
         val backStackEntry by navController.currentBackStackEntryAsState()
         val route = backStackEntry?.destination?.route
-        // Экран, открытый поверх раздела, подсвечивает вкладку своего раздела.
         val currentPlugin = plugins.firstOrNull { route in it.routes }
         val tabSections = remember(tabs) { tabs.map { it.first.section }.toSet() }
-        val section = currentPlugin?.section ?: route
+
+        // Нижняя навигация — часть экранов-вкладок, а не Scaffold: шторка поверх раздела закрывает её целиком,
+        // а при жесте «назад» раздел под шторкой уже стоит со своей навигацией и после жеста не перестраивается.
+        val frame = remember(tabs, plugins, navigator) {
+            ScreenFrame { screenRoute, content ->
+                val plugin = plugins.firstOrNull { screenRoute in it.routes }
+                val withBars = plugin?.entry is FeatureEntry.Tab && screenRoute == plugin.section &&
+                    screenRoute !in plugin.fullScreenRoutes && tabs.size > 1
+                if (!withBars) {
+                    content()
+                } else {
+                    val cartNow by remember(observeCart) { observeCart() }.collectAsState(CartSummary(emptyList()))
+                    // Панель лежит поверх списка, как в приложении: в её скруглённых углах видно прокручиваемое содержимое.
+                    val withDeliveryBar = screenRoute != Destinations.CART
+                    BarsOverContent(
+                        overlap = withDeliveryBar,
+                        content = content,
+                        bars = {
+                            Column {
+                                // Как в приложении: плашки доставки нет на экране самой корзины.
+                                if (withDeliveryBar) {
+                                    DeliveryBar(cartNow, onClick = { navigator.open(Destinations.CART) })
+                                }
+                                ShopNavigationBar(
+                                    tabs = tabs,
+                                    section = plugin.section,
+                                    cartCount = cartNow.count,
+                                    onOpen = navigator::open,
+                                )
+                            }
+                        },
+                    )
+                }
+            }
+        }
 
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            CompositionLocalProvider(LocalWindowSize provides WindowSize.forWidth(maxWidth)) {
+            CompositionLocalProvider(
+                LocalWindowSize provides WindowSize.forWidth(maxWidth),
+                LocalWindowWidth provides maxWidth,
+                LocalScreenFrame provides frame,
+            ) {
                 Scaffold(
                     // Тёмная полоса под статус-баром, как у референса; экраны рисуют свой фон сами.
                     containerColor = FreshColors.Dark,
-                    // Нижний отступ под системную панель даёт сама навигация, а шторки заливают его белым.
+                    // Нижний отступ под системную панель дают навигация и шторки.
                     contentWindowInsets = WindowInsets.statusBars,
                     topBar = {
                         // Экраны магазина рисуют заголовки сами; панель нужна только для служебных ссылок.
@@ -129,30 +176,14 @@ fun App(navController: NavHostController = rememberNavController()) {
                             )
                         }
                     },
-                    bottomBar = {
-                        val onTabScreen = currentPlugin?.entry is FeatureEntry.Tab &&
-                                route !in currentPlugin.fullScreenRoutes
-                        // Одна вкладка — навигация не нужна; появится, когда фича объявит вторую.
-                        if (tabs.size > 1 && onTabScreen) {
-                            Column(Modifier.background(FreshColors.Canvas)) {
-                                DeliveryBar(cart)
-                                ShopNavigationBar(
-                                    tabs = tabs,
-                                    section = section,
-                                    cartCount = cart.count,
-                                    onOpen = navigator::open,
-                                )
-                            }
-                        }
-                    },
                 ) { padding ->
                     NavHost(
                         navController,
                         startDestination = Destinations.HOME,
                         modifier = Modifier.padding(padding).consumeWindowInsets(padding),
                         // Вкладки сменяются коротким кроссфейдом. Экраны поверх раздела (товар, оформление, демо-панель)
-                        // выезжают шторкой снизу; при предиктивном жесте «назад» шторка уходит вниз вслед за пальцем,
-                        // а раздел под ней возвращается из лёгкого уменьшения.
+                        // выезжают шторкой снизу. Раздел под шторкой не двигается и не масштабируется, только темнеет:
+                        // иначе при жесте «назад» он сначала ползёт вверх, а потом встаёт на место.
                         enterTransition = {
                             if (targetState.isSheet(tabSections)) {
                                 slideInVertically(tween(SHEET_MS)) { it } + fadeIn(tween(SHEET_MS / 2))
@@ -162,14 +193,14 @@ fun App(navController: NavHostController = rememberNavController()) {
                         },
                         exitTransition = {
                             if (targetState.isSheet(tabSections)) {
-                                scaleOut(tween(SHEET_MS), targetScale = BEHIND_SCALE) + fadeOut(tween(SHEET_MS), targetAlpha = BEHIND_ALPHA)
+                                fadeOut(tween(SHEET_MS), targetAlpha = BEHIND_ALPHA)
                             } else {
                                 fadeOut(tween(NAV_FADE_MS))
                             }
                         },
                         popEnterTransition = {
                             if (initialState.isSheet(tabSections)) {
-                                scaleIn(tween(SHEET_MS), initialScale = BEHIND_SCALE) + fadeIn(tween(SHEET_MS), initialAlpha = BEHIND_ALPHA)
+                                fadeIn(tween(SHEET_MS), initialAlpha = BEHIND_ALPHA)
                             } else {
                                 fadeIn(tween(NAV_FADE_MS))
                             }
@@ -182,10 +213,10 @@ fun App(navController: NavHostController = rememberNavController()) {
                             }
                         },
                         // Жест «назад» двигает переход вслед за пальцем: шторка уезжает вниз и чуть уменьшается,
-                        // раздел под ней проявляется. Без этого NavHost просто сжимает экран к центру.
+                        // раздел под ней проявляется на месте.
                         predictivePopEnterTransition = {
                             if (initialState.isSheet(tabSections)) {
-                                scaleIn(initialScale = BEHIND_SCALE) + fadeIn(initialAlpha = BEHIND_ALPHA)
+                                fadeIn(initialAlpha = BEHIND_ALPHA)
                             } else {
                                 fadeIn()
                             }
@@ -209,7 +240,10 @@ fun App(navController: NavHostController = rememberNavController()) {
     }
 }
 
-/** Нижняя навигация как в приложении: ниже стандартной Material (80 dp), без подсветки, активная вкладка чёрная. */
+/**
+ * Нижняя навигация как в приложении: 56 dp, ниже стандартной Material (80 dp), без подсветки, активная вкладка
+ * чёрная. На широком экране вкладки собраны по центру, а не растянуты на всю ширину.
+ */
 @Composable
 private fun ShopNavigationBar(
     tabs: List<Pair<FeaturePlugin, FeatureEntry.Tab>>,
@@ -217,51 +251,87 @@ private fun ShopNavigationBar(
     cartCount: Int,
     onOpen: (String) -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth().background(FreshColors.White).navigationBarsPadding().height(56.dp)) {
-        tabs.forEach { (plugin, tab) ->
-            val selected = section == plugin.section
-            val color = if (selected) FreshColors.Ink else FreshColors.NavInactive
-            Column(
-                Modifier.weight(1f).fillMaxHeight().selectable(selected, role = Role.Tab) { onOpen(plugin.section) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                val badge = if (plugin.section == Destinations.CART) cartCount else 0
-                BadgedBox(badge = { if (badge > 0) Badge(containerColor = FreshColors.Pink) { Text("$badge") } }) {
-                    NavIconView(tab.icon, color, size = 23.dp)
+    Box(Modifier.fillMaxWidth().background(FreshColors.White).navigationBarsPadding(), contentAlignment = Alignment.Center) {
+        Row(Modifier.widthIn(max = READABLE_WIDTH).fillMaxWidth().height(56.dp)) {
+            tabs.forEach { (plugin, tab) ->
+                val selected = section == plugin.section
+                val color = if (selected) FreshColors.Ink else FreshColors.NavInactive
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().selectable(selected, role = Role.Tab) { onOpen(plugin.section) }
+                        .padding(top = 9.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    val badge = if (plugin.section == Destinations.CART) cartCount else 0
+                    BadgedBox(badge = { if (badge > 0) Badge(containerColor = FreshColors.Pink) { Text("$badge") } }) {
+                        NavIconView(tab.icon, color, size = 23.dp)
+                    }
+                    Text(
+                        tab.label,
+                        color = color,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.75.sp, lineHeight = 15.sp),
+                        modifier = Modifier.paddingFromBaseline(top = 14.5.dp),
+                    )
                 }
-                Text(
-                    tab.label,
-                    color = color,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
-                    modifier = Modifier.padding(top = 3.dp),
-                )
             }
         }
     }
 }
 
-/** Плашка над навигацией: сколько осталось до бесплатной доставки. */
+/** Скругление верха плашки доставки: под ним видно содержимое экрана. */
+private val BAR_RADIUS = 20.dp
+
+/**
+ * Экран и нижняя панель: панель внизу поверх экрана. С плашкой доставки ([overlap]) экран заканчивается под её
+ * скруглёнными углами, без неё — ровно над навигацией.
+ */
 @Composable
-private fun DeliveryBar(cart: CartSummary) {
-    val text = when {
-        cart.items.isEmpty() -> "Бесплатная доставка от ${FREE_DELIVERY_FROM.rub()}"
-        cart.deliveryFee > 0 -> "Корзина ${cart.itemsTotal.rub()}  •  ещё ${(FREE_DELIVERY_FROM - cart.itemsTotal).rub()} до бесплатной доставки"
-        else -> "Корзина ${cart.itemsTotal.rub()}  •  доставка бесплатно"
+private fun BarsOverContent(overlap: Boolean, content: @Composable () -> Unit, bars: @Composable () -> Unit) {
+    Layout(
+        content = {
+            Box(Modifier.background(FreshColors.Canvas)) { content() }
+            bars()
+        },
+        modifier = Modifier.fillMaxSize(),
+    ) { measurables, constraints ->
+        val loose = constraints.copy(minHeight = 0)
+        val barsPlaceable = measurables[1].measure(loose)
+        val under = if (overlap) BAR_RADIUS.roundToPx() else 0
+        val contentHeight = (constraints.maxHeight - barsPlaceable.height + under).coerceAtLeast(0)
+        val contentPlaceable = measurables[0].measure(constraints.copy(minHeight = contentHeight, maxHeight = contentHeight))
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            contentPlaceable.place(0, 0)
+            barsPlaceable.place(0, constraints.maxHeight - barsPlaceable.height)
+        }
     }
-    Text(
-        text,
-        color = FreshColors.Muted,
-        style = MaterialTheme.typography.bodyLarge,
-        textAlign = TextAlign.Center,
-        maxLines = 1,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+}
+
+/** Плашка над навигацией, как «Заказ от 300 ₽ • доставка от +0 ₽ ⌄» в приложении: сумма и условие доставки. */
+@Composable
+private fun DeliveryBar(cart: CartSummary, onClick: () -> Unit) {
+    val (left, right) = when {
+        cart.items.isEmpty() -> "Доставка ${DELIVERY_FEE.rub()}" to "бесплатно от ${FREE_DELIVERY_FROM.rub()}"
+        cart.deliveryFee > 0 -> "Корзина ${cart.itemsTotal.rub()}" to "ещё ${(FREE_DELIVERY_FROM - cart.itemsTotal).rub()} до бесплатной"
+        else -> "Корзина ${cart.itemsTotal.rub()}" to "доставка 0 ₽"
+    }
+    Column(
+        Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(topStart = BAR_RADIUS, topEnd = BAR_RADIUS))
             .background(FreshColors.White)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
-    )
-    HorizontalDivider(color = FreshColors.Line, modifier = Modifier.background(FreshColors.White).padding(horizontal = 16.dp))
+            .clickable(onClickLabel = "Открыть корзину", onClick = onClick),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().height(37.dp).padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 20.sp)
+            Text(left, color = FreshColors.Muted, style = style, maxLines = 1)
+            Text("  •  ", color = FreshColors.Line, style = style)
+            Text(right, color = FreshColors.Muted, style = style, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            NavIconView(NavIcon.ChevronDown, FreshColors.Muted, Modifier.padding(start = 4.dp), size = 14.dp)
+        }
+        Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp).height(1.5.dp).clip(CircleShape).background(FreshColors.Line))
+    }
 }
 
 @Composable

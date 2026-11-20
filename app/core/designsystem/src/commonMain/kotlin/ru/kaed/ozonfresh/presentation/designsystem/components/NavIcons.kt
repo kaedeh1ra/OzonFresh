@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 // Иконки нарисованы на Canvas: отдельная библиотека иконок ради нескольких штук не нужна.
 // Вкладки — залитые фигуры, как в нижней навигации референса; служебные (поиск, назад) — линиями.
 
-enum class NavIcon { Home, Products, Catalog, Cart, Profile, List, Search, Back, ChevronDown, Close, Heart }
+enum class NavIcon { Home, Products, Catalog, Ready, Cart, Profile, List, Search, Back, ChevronDown, Close, Heart }
 
 @Composable
 fun NavIconView(icon: NavIcon, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp) {
@@ -30,6 +30,7 @@ fun NavIconView(icon: NavIcon, color: Color, modifier: Modifier = Modifier, size
             NavIcon.Home -> home(w, color, stroke)
             NavIcon.Products -> apple(w, color)
             NavIcon.Catalog -> tiles(w, color)
+            NavIcon.Ready -> bowl(w, color)
             NavIcon.Cart -> basket(w, color)
             NavIcon.Profile -> person(w, color)
             NavIcon.List -> list(w, color, stroke)
@@ -116,6 +117,26 @@ private fun DrawScope.tiles(w: Float, color: Color) {
             size = Size(w * 0.36f, w * 0.36f),
             cornerRadius = CornerRadius(w * 0.11f),
         )
+    }
+}
+
+/** «Готовое»: миска с паром, как на вкладке приложения. */
+private fun DrawScope.bowl(w: Float, color: Color) {
+    val body = Path().apply {
+        moveTo(w * 0.06f, w * 0.5f)
+        lineTo(w * 0.94f, w * 0.5f)
+        cubicTo(w * 0.94f, w * 0.76f, w * 0.74f, w * 0.92f, w * 0.5f, w * 0.92f)
+        cubicTo(w * 0.26f, w * 0.92f, w * 0.06f, w * 0.76f, w * 0.06f, w * 0.5f)
+        close()
+    }
+    drawPath(body, color)
+    val steam = Stroke(w * 0.07f, cap = StrokeCap.Round)
+    listOf(0.32f, 0.5f, 0.68f).forEach { x ->
+        val path = Path().apply {
+            moveTo(w * x, w * 0.4f)
+            cubicTo(w * (x - 0.07f), w * 0.31f, w * (x + 0.07f), w * 0.22f, w * x, w * 0.1f)
+        }
+        drawPath(path, color, style = steam)
     }
 }
 

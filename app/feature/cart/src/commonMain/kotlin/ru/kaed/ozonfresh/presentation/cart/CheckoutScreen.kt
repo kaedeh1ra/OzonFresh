@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,10 +41,10 @@ import ru.kaed.ozonfresh.domain.usecase.shop.ObserveTodayUseCase
 import ru.kaed.ozonfresh.domain.usecase.shop.OrderResult
 import ru.kaed.ozonfresh.domain.usecase.shop.PlaceOrderUseCase
 import ru.kaed.ozonfresh.navigation.AppNavigator
+import ru.kaed.ozonfresh.presentation.designsystem.components.READABLE_WIDTH
 import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.SheetScreen
-import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
-import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.mvi.CollectEffects
 import ru.kaed.ozonfresh.presentation.mvi.MviViewModel
@@ -123,11 +124,16 @@ fun CheckoutScreen(
     onIntent: (CheckoutContract.Intent) -> Unit,
     onBack: () -> Unit,
 ) {
-    val padding = windowSize.contentPadding
+    val padding = ScreenPadding
     SheetScreen {
         ScreenHeader("Оформление заказа", onBack)
+        // На широком экране форма не растягивается: колонка по центру.
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = padding),
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+        Column(
+            Modifier.widthIn(max = READABLE_WIDTH).fillMaxWidth().padding(horizontal = padding),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Section("Адрес доставки") {
@@ -157,13 +163,15 @@ fun CheckoutScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        }
         Button(
             onClick = { onIntent(CheckoutContract.Intent.Pay) },
             enabled = state.summary.items.isNotEmpty(),
-            shape = CircleShape,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = padding, vertical = 12.dp).height(52.dp),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.align(Alignment.CenterHorizontally).widthIn(max = READABLE_WIDTH).fillMaxWidth()
+                .padding(horizontal = padding, vertical = 10.dp).height(48.dp),
         ) {
-            Text("Оплатить ${state.summary.total.rub()}")
+            Text("Оплатить ${state.summary.total.rub()}", style = ButtonTextStyle)
         }
     }
 

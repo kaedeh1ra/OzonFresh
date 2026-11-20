@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -61,10 +61,10 @@ fun OrderDoneScreen(orderId: String, total: Int, onHome: () -> Unit) {
             )
             Button(
                 onClick = onHome,
-                shape = CircleShape,
-                modifier = Modifier.padding(top = 28.dp).widthIn(max = 360.dp).fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(top = 28.dp).widthIn(max = 360.dp).fillMaxWidth().height(48.dp),
             ) {
-                Text("На главную")
+                Text("На главную", style = ButtonTextStyle)
             }
         }
     }

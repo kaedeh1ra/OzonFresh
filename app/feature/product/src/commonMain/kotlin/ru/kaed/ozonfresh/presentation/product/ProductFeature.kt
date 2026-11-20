@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,8 +55,9 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.NavIconView
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductImage
 import ru.kaed.ozonfresh.presentation.designsystem.components.QuantityStepper
 import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.SheetScreen
-import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
+import ru.kaed.ozonfresh.presentation.designsystem.components.WindowSize
 import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.mvi.MviViewModel
@@ -108,7 +111,10 @@ private fun ProductRoute(productId: String, navigator: AppNavigator) {
     ProductScreen(state, viewModel::onIntent, onBack = navigator::up)
 }
 
-/** Карточка товара как шторка в приложении: картинка во всю ширину, крестик поверх, цена и кнопка внизу. */
+/**
+ * Карточка товара как шторка в приложении: картинка во всю ширину, крестик поверх, цена и кнопка внизу.
+ * На широком экране (раскрытый складной телефон) картинка слева, описание и покупка справа.
+ */
 @Composable
 fun ProductScreen(state: ProductContract.State, onIntent: (ProductContract.Intent) -> Unit, onBack: () -> Unit) {
     val product = state.product
@@ -118,69 +124,100 @@ fun ProductScreen(state: ProductContract.State, onIntent: (ProductContract.Inten
             MessageState("Товар не найден", description = "Возможно, его убрали из ассортимента")
             return@SheetScreen
         }
-        val padding = windowSize.contentPadding
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            Box {
+        if (windowSize == WindowSize.Compact) {
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                Box {
+                    ProductImage(
+                        product.emoji,
+                        Modifier.fillMaxWidth().aspectRatio(1.15f),
+                        emojiSize = 150.sp,
+                        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+                        productId = product.id,
+                    )
+                    CloseRow(onBack, Modifier.align(Alignment.TopEnd))
+                }
+                ProductInfo(product)
+            }
+            BuyRow(product, state.quantity, onIntent)
+        } else {
+            Row(Modifier.weight(1f).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 ProductImage(
                     product.emoji,
-                    Modifier.fillMaxWidth().aspectRatio(1.15f),
-                    emojiSize = 150.sp,
-                    shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+                    Modifier.weight(1f).fillMaxHeight(),
+                    emojiSize = 180.sp,
+                    shape = RoundedCornerShape(24.dp),
                     productId = product.id,
                 )
-                Row(
-                    Modifier.align(Alignment.TopEnd).padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    NavIconView(NavIcon.Heart, FreshColors.NavInactive, size = 24.dp)
-                    Box(
-                        Modifier.size(30.dp).clip(CircleShape).background(FreshColors.NavInactive)
-                            .clickable(onClickLabel = "Закрыть", onClick = onBack),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        NavIconView(NavIcon.Close, FreshColors.White, size = 13.dp)
-                    }
+                Column(Modifier.weight(1f).fillMaxHeight()) {
+                    CloseRow(onBack, Modifier.align(Alignment.End))
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) { ProductInfo(product, inset = 0.dp) }
+                    BuyRow(product, state.quantity, onIntent, inset = 0.dp)
                 }
             }
-            Text(
-                "${product.name}, ${product.unit}",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(start = padding + 6.dp, end = padding, top = 16.dp),
-            )
-            Column(
-                Modifier.padding(horizontal = padding).padding(top = 14.dp).fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp)).background(FreshColors.Card).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text("О товаре", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    product.description.ifBlank { "Описание появится позже." },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = FreshColors.Muted,
-                )
-            }
         }
-        Row(
-            Modifier.fillMaxWidth().padding(start = padding + 6.dp, end = padding, top = 10.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+    }
+}
+
+@Composable
+private fun CloseRow(onBack: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier.padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NavIconView(NavIcon.Heart, FreshColors.NavInactive, size = 24.dp)
+        Box(
+            Modifier.size(30.dp).clip(CircleShape).background(FreshColors.NavInactive)
+                .clickable(onClickLabel = "Закрыть", onClick = onBack),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(product.price.rub(), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
-            if (state.quantity == 0) {
-                Button(
-                    onClick = { onIntent(ProductContract.Intent.Add) },
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.weight(1.2f).height(50.dp),
-                ) { Text("В корзину", style = MaterialTheme.typography.titleMedium) }
-            } else {
-                QuantityStepper(
-                    state.quantity,
-                    { onIntent(ProductContract.Intent.ChangeQuantity(it)) },
-                    Modifier.weight(1.2f),
-                    height = 50.dp,
-                )
-            }
+            NavIconView(NavIcon.Close, FreshColors.White, size = 13.dp)
+        }
+    }
+}
+
+@Composable
+private fun ProductInfo(product: Product, inset: Dp = ScreenPadding) {
+    Text(
+        "${product.name}, ${product.unit}",
+        style = MaterialTheme.typography.headlineSmall,
+        modifier = Modifier.padding(start = inset + 6.dp, end = inset, top = 16.dp),
+    )
+    Column(
+        Modifier.padding(horizontal = inset).padding(top = 14.dp).fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp)).background(FreshColors.Card).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text("О товаре", style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp, lineHeight = 20.sp))
+        Text(
+            product.description.ifBlank { "Описание появится позже." },
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 19.sp),
+            color = FreshColors.Muted,
+        )
+    }
+}
+
+@Composable
+private fun BuyRow(product: Product, quantity: Int, onIntent: (ProductContract.Intent) -> Unit, inset: Dp = ScreenPadding) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = inset + 6.dp, end = inset, top = 10.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(product.price.rub(), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+        if (quantity == 0) {
+            Button(
+                onClick = { onIntent(ProductContract.Intent.Add) },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.weight(1.2f).height(50.dp),
+            ) { Text("В корзину", style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp)) }
+        } else {
+            QuantityStepper(
+                quantity,
+                { onIntent(ProductContract.Intent.ChangeQuantity(it)) },
+                Modifier.weight(1.2f),
+                height = 50.dp,
+            )
         }
     }
 }

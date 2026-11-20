@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -41,22 +43,27 @@ import androidx.compose.ui.unit.sp
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
 // Каркас экранов магазина: тёмная шапка с адресом, под ней белые скруглённые секции на сером фоне.
+// Размеры в dp сняты со скриншотов приложения на телефоне 1280×2772 при 520 dpi (3,25 px на dp).
 
 private val SECTION_RADIUS = 28.dp
+
+/** Серый промежуток между секциями. */
+val SECTION_GAP = 8.dp
 
 /** Обещание доставки в шапке и на экранах. */
 const val DELIVERY_ETA = "15–30 минут"
 
 /**
- * Тёмная шапка: иконка приложения, «fresh • время доставки», адрес и крестик справа.
+ * Тёмная шапка высотой 61 dp под статус-баром: иконка 32 dp, «fresh • время доставки», адрес и крестик справа.
  * Скрытые входы в демо-панель для защиты: долгое нажатие на шапку и крестик.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShopHeader(address: String, onOpenDemo: (() -> Unit)? = null, modifier: Modifier = Modifier) {
-    Row(
+    Box(
         modifier
             .fillMaxWidth()
+            .height(61.dp)
             .background(FreshColors.Dark)
             .then(
                 if (onOpenDemo != null) {
@@ -64,32 +71,32 @@ fun ShopHeader(address: String, onOpenDemo: (() -> Unit)? = null, modifier: Modi
                 } else {
                     Modifier
                 },
-            )
-            .padding(start = 14.dp, end = 12.dp, top = 8.dp, bottom = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            ),
     ) {
-        AppMark()
-        Column(Modifier.padding(start = 10.dp).weight(1f)) {
+        AppMark(Modifier.offset(x = 16.dp, y = 12.dp))
+        val textStart = Modifier.padding(start = 56.dp, end = if (onOpenDemo != null) 64.dp else 16.dp)
+        Text(
+            "fresh  •  $DELIVERY_ETA",
+            color = FreshColors.White,
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.5.sp, lineHeight = 16.sp),
+            maxLines = 1,
+            modifier = textStart.paddingFromBaseline(top = 25.dp),
+        )
+        Row(textStart.paddingFromBaseline(top = 41.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "fresh  •  $DELIVERY_ETA",
-                color = FreshColors.White,
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.5.sp),
+                address,
+                color = FreshColors.NavInactive,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.5.sp, lineHeight = 16.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    address,
-                    color = FreshColors.NavInactive,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 13.5.sp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                NavIconView(NavIcon.ChevronDown, FreshColors.NavInactive, Modifier.padding(start = 3.dp), size = 14.dp)
-            }
+            NavIconView(NavIcon.ChevronDown, FreshColors.NavInactive, Modifier.padding(start = 3.dp), size = 14.dp)
         }
         if (onOpenDemo != null) {
             Box(
-                Modifier.size(34.dp).clip(CircleShape).background(FreshColors.DarkButton)
+                Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 26.dp).size(32.dp).clip(CircleShape)
+                    .background(FreshColors.DarkButton)
                     .clickable(onClickLabel = "Демо-панель", onClick = onOpenDemo),
                 contentAlignment = Alignment.Center,
             ) {
@@ -103,11 +110,11 @@ fun ShopHeader(address: String, onOpenDemo: (() -> Unit)? = null, modifier: Modi
 @Composable
 fun AppMark(modifier: Modifier = Modifier) {
     Box(
-        modifier.size(34.dp).clip(RoundedCornerShape(9.dp))
+        modifier.size(32.dp).clip(RoundedCornerShape(9.dp))
             .background(Brush.linearGradient(listOf(FreshColors.Teal, FreshColors.Pink))),
         contentAlignment = Alignment.Center,
     ) {
-        NavIconView(NavIcon.Products, FreshColors.White, size = 18.dp)
+        NavIconView(NavIcon.Products, FreshColors.White, size = 17.dp)
     }
 }
 
@@ -131,7 +138,7 @@ fun Modifier.sectionPart(top: Boolean, bottom: Boolean, onDark: Boolean = false)
     return this
         .fillMaxWidth()
         .background(behind)
-        .padding(bottom = if (bottom) 6.dp else 0.dp)
+        .padding(bottom = if (bottom) SECTION_GAP else 0.dp)
         .clip(shape)
         .background(FreshColors.White)
 }
@@ -142,18 +149,22 @@ fun ShopSection(
     modifier: Modifier = Modifier,
     onDark: Boolean = false,
     contentPadding: Dp = 16.dp,
+    bottomPadding: Dp = contentPadding,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier.sectionPart(top = true, bottom = true, onDark = onDark).padding(vertical = contentPadding), content = content)
+    Column(
+        modifier.sectionPart(top = true, bottom = true, onDark = onDark).padding(top = contentPadding, bottom = bottomPadding),
+        content = content,
+    )
 }
 
 /**
- * Вложенный экран (карточка товара, оформление): тёмная полоса сверху и белый лист со скруглением,
- * как у модальных экранов референса.
+ * Вложенный экран (карточка товара, оформление): белый лист со скруглением сверху, как у модальных экранов
+ * референса. Полоса над листом прозрачная: при жесте «назад» сквозь неё виден экран под шторкой.
  */
 @Composable
 fun SheetScreen(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxSize().background(FreshColors.Dark).padding(top = 8.dp)) {
+    Column(Modifier.fillMaxSize().padding(top = 8.dp)) {
         Column(
             modifier.fillMaxSize().clip(RoundedCornerShape(topStart = SECTION_RADIUS, topEnd = SECTION_RADIUS))
                 .background(FreshColors.White)
@@ -164,7 +175,10 @@ fun SheetScreen(modifier: Modifier = Modifier, content: @Composable ColumnScope.
     }
 }
 
-/** Строка поиска. Без [onValueChange] — кнопка, ведущая на экран поиска. */
+/**
+ * Строка поиска. Без [onValueChange] — кнопка по центру (главная: 48 dp, края 8 dp), с ним — поле
+ * с текстом слева (каталог: 40 dp, края 16 dp). [leftAligned] — кнопка в виде поля, как на «Готовом».
+ */
 @Composable
 fun SearchBar(
     modifier: Modifier = Modifier,
@@ -172,24 +186,26 @@ fun SearchBar(
     onValueChange: ((String) -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     placeholder: String = "Найти с быстрой доставкой",
+    leftAligned: Boolean = onValueChange != null,
 ) {
+    val field = leftAligned
     Row(
         modifier
             .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .height(if (field) 40.dp else 48.dp)
+            .clip(RoundedCornerShape(if (field) 13.dp else 16.dp))
             .background(FreshColors.Card)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = if (field) 8.dp else 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (onValueChange == null) Arrangement.Center else Arrangement.Start,
+        horizontalArrangement = if (field) Arrangement.Start else Arrangement.Center,
     ) {
-        NavIconView(NavIcon.Search, FreshColors.Muted, size = 20.dp)
-        val textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, color = FreshColors.Ink)
+        NavIconView(NavIcon.Search, FreshColors.Muted, size = 19.dp)
+        val textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, lineHeight = 20.sp, color = FreshColors.Ink)
         if (onValueChange == null) {
-            Text(placeholder, style = textStyle.copy(color = FreshColors.Muted), modifier = Modifier.padding(start = 8.dp))
+            Text(placeholder, style = textStyle.copy(color = FreshColors.Muted), modifier = Modifier.padding(start = 6.dp))
         } else {
-            Box(Modifier.padding(start = 10.dp).weight(1f)) {
+            Box(Modifier.padding(start = 6.dp).weight(1f)) {
                 if (value.isEmpty()) Text(placeholder, style = textStyle.copy(color = FreshColors.Muted))
                 BasicTextField(
                     value = value,
@@ -204,70 +220,89 @@ fun SearchBar(
     }
 }
 
-/** «История» в ряду под поиском: крупная картинка без подложки и подпись в две строки. */
+/** Шаг «историй» в ряду под поиском и отступ первой. */
+val STORY_WIDTH = 69.5.dp
+val STORY_ROW_START = 8.dp
+
+/** «История» в ряду под поиском: картинка 47 dp на светлой подложке и подпись в две строки. */
 @Composable
 fun PromoStory(emoji: String, title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier.width(78.dp).clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(vertical = 4.dp),
+        modifier.width(STORY_WIDTH).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(emoji, fontSize = 44.sp, modifier = Modifier.height(56.dp))
+        Box(Modifier.size(47.dp).clip(RoundedCornerShape(12.dp)).background(FreshColors.Card), contentAlignment = Alignment.Center) {
+            Text(emoji, fontSize = 28.sp)
+        }
         Text(
             title,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp, lineHeight = 15.4.sp),
             textAlign = TextAlign.Center,
             maxLines = 2,
             minLines = 2,
+            modifier = Modifier.paddingFromBaseline(top = 12.dp),
         )
     }
 }
+
+/** Плитки разделов в ряду под историями: 100 × 134 dp, промежуток 6,5 dp. */
+val TILE_WIDTH = 100.dp
+val TILE_HEIGHT = 134.dp
+val TILE_GAP = 6.5.dp
 
 /** Плитка раздела: название сверху слева, картинка снизу справа. В ряду под поиском и в каталоге. */
 @Composable
-fun CategoryTile(title: String, emoji: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CategoryTile(title: String, emoji: String, onClick: () -> Unit, modifier: Modifier = Modifier, emojiSize: Int = 56) {
     Box(
-        modifier.height(128.dp).clip(RoundedCornerShape(18.dp)).background(FreshColors.Card).clickable(onClick = onClick),
+        modifier.clip(RoundedCornerShape(18.dp)).background(FreshColors.Card).clickable(onClick = onClick),
     ) {
         Text(
             title,
-            style = MaterialTheme.typography.titleMedium.copy(fontSize = 12.5.sp, lineHeight = 15.sp),
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 8.dp),
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 13.sp, lineHeight = 13.8.sp),
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(start = 8.dp, end = 6.dp).paddingFromBaseline(top = 18.dp),
         )
-        Text(emoji, fontSize = 54.sp, modifier = Modifier.align(Alignment.BottomEnd).padding(end = 4.dp, bottom = 2.dp))
+        Text(emoji, fontSize = emojiSize.sp, modifier = Modifier.align(Alignment.BottomEnd).padding(end = 4.dp, bottom = 2.dp))
     }
 }
 
-/** Градиентный баннер акции: заголовок, подпись и белая плашка с цифрой. */
+/** Градиентный баннер акции 54,5 dp: заголовок, подпись и белая плашка с цифрой. */
 @Composable
 fun PromoBanner(title: String, subtitle: String, badge: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
+    Box(
         modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .height(54.5.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(Brush.horizontalGradient(listOf(Color(0xFFFE9A5E), Color(0xFFFF6FA8), Color(0xFFFD6BBC))))
-            .clickable(onClick = onClick)
-            .padding(start = 14.dp, end = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .clickable(onClick = onClick),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, color = FreshColors.White, style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.5.sp))
-            Text(subtitle, color = FreshColors.White, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.5.sp))
-        }
+        Text(
+            title,
+            color = FreshColors.White,
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.25.sp, lineHeight = 17.sp),
+            modifier = Modifier.padding(start = 12.dp).paddingFromBaseline(top = 19.5.dp),
+        )
+        Text(
+            subtitle,
+            color = FreshColors.White,
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.6.sp, lineHeight = 15.sp),
+            modifier = Modifier.padding(start = 12.dp).paddingFromBaseline(top = 40.5.dp),
+        )
         Text(
             badge,
             color = FreshColors.Ink,
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp),
-            modifier = Modifier.rotate(-8f).clip(RoundedCornerShape(10.dp)).background(FreshColors.White)
+            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp).rotate(-8f)
+                .clip(RoundedCornerShape(10.dp)).background(FreshColors.White)
                 .padding(horizontal = 8.dp, vertical = 2.dp),
         )
     }
 }
 
 /**
- * Купон с прогрессом: слева иконка и условие, справа сколько осталось.
- * [progress] от 0 до 1 — полоска под суммой.
+ * Купон с прогрессом, 92 dp: слева иконка и условие, справа (101 dp) сколько осталось.
+ * [progress] от 0 до 1 — полоска 48 dp под суммой.
  */
 @Composable
 fun CouponCard(
@@ -280,20 +315,34 @@ fun CouponCard(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(FreshColors.Card),
+        modifier.fillMaxWidth().height(92.dp).clip(RoundedCornerShape(20.dp)).background(FreshColors.Card),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(emoji, fontSize = 30.sp, modifier = Modifier.padding(start = 10.dp))
-        Column(Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 10.dp)) {
-            Text(title, style = MaterialTheme.typography.headlineSmall)
-            Text(description, style = MaterialTheme.typography.bodyMedium, color = FreshColors.Muted)
+        Text(
+            emoji,
+            fontSize = 32.sp,
+            modifier = Modifier.align(Alignment.Top).padding(start = 7.dp, top = 11.dp).width(45.dp),
+        )
+        Column(Modifier.weight(1f).padding(start = 7.dp, end = 8.dp)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 16.sp, lineHeight = 19.sp),
+                maxLines = 1,
+            )
+            Text(
+                description,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp, lineHeight = 15.sp),
+                color = FreshColors.Muted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 chip,
                 color = Color(0xFF5B4FE0),
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp, lineHeight = 12.sp),
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 6.dp).clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFE9E7FC)).padding(horizontal = 6.dp, vertical = 2.dp),
+                modifier = Modifier.padding(top = 5.dp).clip(RoundedCornerShape(6.dp))
+                    .background(Color(0xFFE8EAF9)).padding(horizontal = 6.dp, vertical = 1.5.dp),
             )
         }
         // Пунктир между частями купона.
@@ -305,19 +354,17 @@ fun CouponCard(
             }
         }
         Column(
-            Modifier.width(100.dp).padding(horizontal = 6.dp),
+            Modifier.width(101.dp).padding(horizontal = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 remaining,
                 color = FreshColors.TealText,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.Normal),
                 textAlign = TextAlign.Center,
                 maxLines = 1,
             )
-            Box(
-                Modifier.padding(top = 8.dp).fillMaxWidth().height(4.dp).clip(CircleShape).background(FreshColors.Line),
-            ) {
+            Box(Modifier.padding(top = 9.dp).width(48.dp).height(4.dp).clip(CircleShape).background(FreshColors.Line)) {
                 Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(4.dp).clip(CircleShape).background(FreshColors.Teal))
             }
         }

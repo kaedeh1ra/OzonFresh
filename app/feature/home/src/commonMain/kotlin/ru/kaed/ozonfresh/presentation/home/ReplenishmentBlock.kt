@@ -31,6 +31,7 @@ import ru.kaed.ozonfresh.domain.model.Day
 import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.replenishment.ReplenishmentItem
 import ru.kaed.ozonfresh.presentation.designsystem.components.Badge
+import ru.kaed.ozonfresh.presentation.designsystem.components.CarouselPriceStyle
 import ru.kaed.ozonfresh.presentation.designsystem.components.NameWithUnit
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductImage
 import ru.kaed.ozonfresh.presentation.designsystem.components.QuantityStepper
@@ -38,6 +39,8 @@ import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
 import ru.kaed.ozonfresh.presentation.designsystem.components.ShopSection
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 
+
+/** Шире обычной карусели (126 dp): на карточке бейдж «Скоро закончится», кнопка и «Ещё есть» / «Позже». */
 private val CARD_WIDTH = 146.dp
 
 /**
@@ -56,7 +59,7 @@ internal fun ReplenishmentBlock(
     onStillHave: (ReplenishmentItem) -> Unit,
     onLater: (ReplenishmentItem) -> Unit,
 ) {
-    ShopSection {
+    ShopSection(contentPadding = 20.dp, bottomPadding = 12.dp) {
         SectionTitle(
             "Пора пополнить",
             Modifier.padding(horizontal = horizontalPadding),
@@ -64,7 +67,7 @@ internal fun ReplenishmentBlock(
         )
         LazyRow(
             contentPadding = PaddingValues(horizontal = horizontalPadding),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.padding(top = 12.dp),
         ) {
             items(items, key = { it.product.id }) { item ->
@@ -102,18 +105,18 @@ private fun ReplenishmentCard(
                 Badge(
                     text = if (overdue) "Пора пополнить" else "Скоро закончится",
                     background = if (overdue) FreshColors.Pink else FreshColors.Teal,
-                    modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
                 )
             }
             Text(
                 product.price.rub(),
-                style = MaterialTheme.typography.titleLarge,
+                style = CarouselPriceStyle,
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp),
             )
             Text(
                 "Берёте раз в ${item.forecast.intervalDays} дн.",
                 color = FreshColors.TealText,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -127,12 +130,12 @@ private fun ReplenishmentCard(
                 onClick = onAdd,
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.padding(top = 8.dp).fillMaxWidth().height(34.dp),
+                modifier = Modifier.padding(top = 8.dp).fillMaxWidth().height(36.dp),
             ) {
-                Text("Добавить")
+                Text("Добавить", style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
             }
         } else {
-            QuantityStepper(quantity, onQuantityChange, Modifier.padding(top = 8.dp).fillMaxWidth(), height = 34.dp)
+            QuantityStepper(quantity, onQuantityChange, Modifier.padding(top = 8.dp).fillMaxWidth(), height = 36.dp)
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -146,7 +149,7 @@ private fun ReplenishmentCard(
 private fun SmallAction(text: String, onClick: () -> Unit) {
     TextButton(
         onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
         modifier = Modifier.height(32.dp),
     ) {
         Text(text, color = FreshColors.Muted, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp), fontWeight = FontWeight.SemiBold)

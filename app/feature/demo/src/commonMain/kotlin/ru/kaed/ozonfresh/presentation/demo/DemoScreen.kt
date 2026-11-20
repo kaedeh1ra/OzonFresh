@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -57,10 +58,10 @@ import ru.kaed.ozonfresh.presentation.demo.DemoContract.Effect
 import ru.kaed.ozonfresh.presentation.demo.DemoContract.Intent
 import ru.kaed.ozonfresh.presentation.demo.DemoContract.State
 import ru.kaed.ozonfresh.presentation.designsystem.components.Pill
+import ru.kaed.ozonfresh.presentation.designsystem.components.READABLE_WIDTH
 import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenHeader
+import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.SheetScreen
-import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
-import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.mvi.CollectEffects
 
@@ -84,10 +85,11 @@ internal fun DemoRoute(navigator: AppNavigator) {
 /** Демо-панель для защиты: управление «сегодняшней» датой, группой A/B-теста и данными, метрики пилота. */
 @Composable
 fun DemoScreen(state: State, onIntent: (Intent) -> Unit, onBack: () -> Unit) {
-    val padding = windowSize.contentPadding
+    val padding = ScreenPadding
     SheetScreen {
         ScreenHeader("Демо-панель", onBack)
         LazyColumn(
+            Modifier.align(Alignment.CenterHorizontally).widthIn(max = READABLE_WIDTH),
             contentPadding = PaddingValues(start = padding, end = padding, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

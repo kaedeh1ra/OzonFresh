@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -119,7 +121,7 @@ fun Badge(text: String, background: Color, modifier: Modifier = Modifier, conten
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
         maxLines = 1,
-        modifier = modifier.clip(CircleShape).background(background).padding(horizontal = 9.dp, vertical = 3.dp),
+        modifier = modifier.clip(CircleShape).background(background).padding(horizontal = 7.dp, vertical = 2.dp),
     )
 }
 
@@ -131,7 +133,7 @@ fun NameWithUnit(name: String, unit: String, modifier: Modifier = Modifier, line
             append(name)
             withStyle(SpanStyle(color = FreshColors.Muted)) { append("  $unit") }
         },
-        style = MaterialTheme.typography.bodyLarge,
+        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 18.5.sp),
         maxLines = lines,
         minLines = lines,
         overflow = TextOverflow.Ellipsis,
@@ -140,8 +142,8 @@ fun NameWithUnit(name: String, unit: String, modifier: Modifier = Modifier, line
 }
 
 /**
- * Карточка товара для сеток и подборок: картинка на светлом фоне, круглая кнопка корзины,
- * цена, название с весом. Когда товар уже в корзине, вместо кнопки — степпер.
+ * Карточка товара для сеток и подборок, как в приложении: квадратная картинка, сердечко, круглая кнопка
+ * корзины 43 dp, цена 21 sp, название 15 sp с весом. Когда товар уже в корзине, вместо кнопки — степпер.
  */
 @Composable
 fun ProductCard(
@@ -157,44 +159,58 @@ fun ProductCard(
     tag: String? = null,
     tagColor: Color = FreshColors.TealText,
     productId: String? = null,
+    carousel: Boolean = false,
 ) {
     Column(modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick)) {
         ProductImage(emoji, Modifier.fillMaxWidth().aspectRatio(1f), productId = productId) {
-            NavIconView(
-                NavIcon.Heart,
-                FreshColors.Line,
-                Modifier.align(Alignment.TopEnd).padding(8.dp),
-                size = 22.dp,
-            )
+            // Сердечко в белом вырезе угла, как в приложении.
+            Box(
+                Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-6).dp).size(32.dp).clip(CircleShape).background(FreshColors.White),
+                contentAlignment = Alignment.Center,
+            ) {
+                NavIconView(NavIcon.Heart, HeartGray, Modifier.offset(x = (-2).dp, y = 2.dp), size = 20.dp)
+            }
             if (quantity == 0) {
-                BasketButton(onAdd, Modifier.align(Alignment.BottomEnd).padding(8.dp))
+                BasketButton(
+                    onAdd,
+                    Modifier.align(Alignment.BottomEnd).padding(end = 6.dp, bottom = 4.dp),
+                    size = if (carousel) 36.dp else 43.dp,
+                )
             } else {
                 QuantityStepper(
                     quantity,
                     onQuantityChange,
-                    Modifier.align(Alignment.BottomCenter).padding(8.dp).fillMaxWidth(),
+                    Modifier.align(Alignment.BottomCenter).padding(start = 6.dp, end = 6.dp, bottom = 4.dp).fillMaxWidth(),
+                    height = 40.dp,
                 )
             }
         }
         Text(
             price,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(start = 4.dp, top = 8.dp),
+            style = if (carousel) CarouselPriceStyle else PriceStyle,
+            modifier = Modifier.padding(start = if (carousel) 4.dp else 8.dp, top = if (carousel) 6.dp else 7.dp),
         )
         if (tag != null) {
             Text(
                 tag,
                 color = tagColor,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+                modifier = Modifier.padding(start = 8.dp),
             )
         }
-        NameWithUnit(name, unit, Modifier.padding(start = 4.dp, end = 4.dp, top = 2.dp, bottom = 8.dp))
+        val inset = if (carousel) 4.dp else 8.dp
+        NameWithUnit(name, unit, Modifier.padding(start = inset, end = inset, bottom = 8.dp))
     }
 }
+
+private val HeartGray = Color(0xFFC6CCD4)
+
+/** Цена в карточке товара: в сетке крупная, в горизонтальной подборке мельче, как в приложении. */
+val PriceStyle = TextStyle(fontSize = 21.sp, lineHeight = 26.sp, fontWeight = FontWeight.ExtraBold, color = FreshColors.Ink)
+val CarouselPriceStyle = TextStyle(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.ExtraBold, color = FreshColors.Ink)
 
 /** Заголовок секции: «Пора пополнить», «Вы покупали». */
 @Composable
@@ -252,11 +268,3 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modi
         )
     }
 }
-
-/** Сетка карточек в LazyColumn: колонок 2 на телефоне, больше на широком экране. */
-val WindowSize.gridColumns: Int
-    get() = when (this) {
-        WindowSize.Compact -> 2
-        WindowSize.Medium -> 3
-        WindowSize.Wide -> 5
-    }

@@ -21,7 +21,7 @@ internal object CartRoutes {
 
 internal class CartPlugin : FeaturePlugin {
     override val routes = listOf(Destinations.CART, CartRoutes.CHECKOUT, CartRoutes.ORDER_DONE)
-    override val entry = FeatureEntry.Tab("Корзина", NavIcon.Cart, order = 2)
+    override val entry = FeatureEntry.Tab("Корзина", NavIcon.Cart, order = 3)
     override val fullScreenRoutes = listOf(CartRoutes.CHECKOUT, CartRoutes.ORDER_DONE)
 
     override fun NavGraphBuilder.register(host: FeatureHost) {

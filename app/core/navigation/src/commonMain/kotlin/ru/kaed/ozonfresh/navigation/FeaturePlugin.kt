@@ -2,6 +2,7 @@ package ru.kaed.ozonfresh.navigation
 
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
@@ -62,10 +63,23 @@ interface AppNavigator {
     fun openClean(section: String)
 }
 
-/** Экран графа навигации. Обёртка — единое место для общих настроек экранов (анимации, жест «назад»). */
+/**
+ * Рамка экрана от оболочки: получает маршрут и сам экран. Оболочка добавляет через неё нижнюю навигацию
+ * к вкладкам — навигация становится частью экрана, и шторка поверх раздела закрывает её целиком.
+ */
+fun interface ScreenFrame {
+    @Composable
+    fun Frame(route: String, content: @Composable () -> Unit)
+}
+
+val LocalScreenFrame = staticCompositionLocalOf { ScreenFrame { _, content -> content() } }
+
+/** Экран графа навигации. Обёртка — единое место для общих настроек экранов (рамка оболочки, анимации). */
 fun NavGraphBuilder.screen(
     route: String,
     content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
 ) {
-    composable(route) { entry -> content(entry) }
+    composable(route) { entry ->
+        LocalScreenFrame.current.Frame(route) { content(entry) }
+    }
 }

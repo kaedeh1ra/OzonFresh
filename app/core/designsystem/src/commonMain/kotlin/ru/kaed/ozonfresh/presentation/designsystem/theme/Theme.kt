@@ -80,8 +80,8 @@ private val FreshShapes = Shapes(
 private val FreshTypography = Typography().run {
     copy(
         // Размеры подогнаны по скриншотам приложения: оно плотнее стандартной шкалы Material.
-        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, lineHeight = 26.sp),
-        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, lineHeight = 23.sp),
+        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 25.sp, lineHeight = 30.sp),
+        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, lineHeight = 26.sp),
         titleLarge = titleLarge.copy(fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, lineHeight = 22.sp),
         titleMedium = titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 18.sp),
         titleSmall = titleSmall.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp, lineHeight = 17.sp),

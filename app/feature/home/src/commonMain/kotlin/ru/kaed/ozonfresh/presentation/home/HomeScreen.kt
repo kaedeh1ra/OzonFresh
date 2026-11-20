@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -31,19 +33,25 @@ import ru.kaed.ozonfresh.domain.model.rub
 import ru.kaed.ozonfresh.domain.usecase.shop.FREE_DELIVERY_FROM
 import ru.kaed.ozonfresh.navigation.AppNavigator
 import ru.kaed.ozonfresh.navigation.Destinations
+import ru.kaed.ozonfresh.presentation.designsystem.components.CAROUSEL_CARD_WIDTH
 import ru.kaed.ozonfresh.presentation.designsystem.components.CategoryTile
 import ru.kaed.ozonfresh.presentation.designsystem.components.CouponCard
+import ru.kaed.ozonfresh.presentation.designsystem.components.GRID_EDGE
+import ru.kaed.ozonfresh.presentation.designsystem.components.GRID_GAP
 import ru.kaed.ozonfresh.presentation.designsystem.components.ProductCard
 import ru.kaed.ozonfresh.presentation.designsystem.components.PromoBanner
 import ru.kaed.ozonfresh.presentation.designsystem.components.PromoStory
+import ru.kaed.ozonfresh.presentation.designsystem.components.STORY_ROW_START
+import ru.kaed.ozonfresh.presentation.designsystem.components.ScreenPadding
 import ru.kaed.ozonfresh.presentation.designsystem.components.SearchBar
 import ru.kaed.ozonfresh.presentation.designsystem.components.SectionTitle
 import ru.kaed.ozonfresh.presentation.designsystem.components.ShopHeader
 import ru.kaed.ozonfresh.presentation.designsystem.components.ShopSection
-import ru.kaed.ozonfresh.presentation.designsystem.components.contentPadding
-import ru.kaed.ozonfresh.presentation.designsystem.components.gridColumns
+import ru.kaed.ozonfresh.presentation.designsystem.components.TILE_GAP
+import ru.kaed.ozonfresh.presentation.designsystem.components.TILE_HEIGHT
+import ru.kaed.ozonfresh.presentation.designsystem.components.TILE_WIDTH
+import ru.kaed.ozonfresh.presentation.designsystem.components.productColumns
 import ru.kaed.ozonfresh.presentation.designsystem.components.sectionPart
-import ru.kaed.ozonfresh.presentation.designsystem.components.windowSize
 import ru.kaed.ozonfresh.presentation.designsystem.theme.FreshColors
 import ru.kaed.ozonfresh.presentation.home.HomeContract.Effect
 import ru.kaed.ozonfresh.presentation.home.HomeContract.Intent
@@ -90,18 +98,18 @@ fun HomeScreen(
     onOpenSearch: () -> Unit,
     onOpenDemo: () -> Unit,
 ) {
-    val padding = windowSize.contentPadding
-    val columns = windowSize.gridColumns
-    LazyColumn(Modifier.fillMaxSize().background(FreshColors.Canvas), contentPadding = PaddingValues(bottom = 8.dp)) {
+    val padding = ScreenPadding
+    val columns = productColumns
+    LazyColumn(Modifier.fillMaxSize().background(FreshColors.Canvas)) {
         // Долгое нажатие на адрес — вход в демо-панель для защиты.
         item(key = "header") { ShopHeader(state.address, onOpenDemo = onOpenDemo) }
 
         item(key = "top") {
-            ShopSection(onDark = true, contentPadding = 12.dp) {
-                SearchBar(Modifier.padding(horizontal = padding), onClick = onOpenSearch)
+            ShopSection(onDark = true, contentPadding = 8.dp, bottomPadding = 8.dp) {
+                SearchBar(Modifier.padding(horizontal = 8.dp), onClick = onOpenSearch)
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = padding - 6.dp),
-                    modifier = Modifier.padding(top = 12.dp),
+                    contentPadding = PaddingValues(horizontal = STORY_ROW_START),
+                    modifier = Modifier.padding(top = 19.dp),
                 ) {
                     items(PROMO_STORIES, key = { it.second }) { (emoji, title) ->
                         PromoStory(emoji, title, onClick = { onIntent(Intent.NotInPrototype(title.replace("\n", " "))) })
@@ -109,11 +117,16 @@ fun HomeScreen(
                 }
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = padding),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(TILE_GAP),
+                    modifier = Modifier.padding(top = 17.dp),
                 ) {
                     items(state.categories, key = { it.id }) { category ->
-                        CategoryTile(category.title, category.emoji, { onOpenCategory(category.id) }, Modifier.width(104.dp))
+                        CategoryTile(
+                            category.title,
+                            category.emoji,
+                            { onOpenCategory(category.id) },
+                            Modifier.size(TILE_WIDTH, TILE_HEIGHT),
+                        )
                     }
                 }
                 PromoBanner(
@@ -121,14 +134,15 @@ fun HomeScreen(
                     subtitle = "На три покупки в приложении",
                     badge = "−30%",
                     onClick = { onIntent(Intent.NotInPrototype("Активируйте скидку")) },
-                    modifier = Modifier.padding(start = padding, end = padding, top = 12.dp),
+                    modifier = Modifier.padding(start = padding, end = padding, top = 16.dp),
                 )
             }
         }
 
         item(key = "coupon") {
-            ShopSection(contentPadding = 12.dp) {
+            ShopSection {
                 val left = FREE_DELIVERY_FROM - state.cartTotal
+                // Купон не растягивается на широком экране: справа у него сумма и полоска фиксированной ширины.
                 CouponCard(
                     emoji = "🚚",
                     title = "Доставка 0 ₽",
@@ -136,7 +150,7 @@ fun HomeScreen(
                     chip = "КАЖДЫЙ ДЕНЬ",
                     remaining = if (left > 0) "Ещё ${left.rub()}" else "Готово!",
                     progress = state.cartTotal.toFloat() / FREE_DELIVERY_FROM,
-                    modifier = Modifier.padding(horizontal = padding),
+                    modifier = Modifier.padding(horizontal = padding).widthIn(max = 420.dp),
                 )
             }
         }
@@ -160,15 +174,15 @@ fun HomeScreen(
 
         if (state.purchased.isNotEmpty()) {
             item(key = "purchased") {
-                ShopSection {
+                ShopSection(contentPadding = 20.dp) {
                     SectionTitle("Вы покупали", Modifier.padding(horizontal = padding))
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = padding),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(top = 12.dp),
                     ) {
                         items(state.purchased, key = { it.id }) { product ->
-                            ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.width(146.dp))
+                            ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.width(CAROUSEL_CARD_WIDTH), carousel = true)
                         }
                     }
                 }
@@ -178,15 +192,15 @@ fun HomeScreen(
         item(key = "hits-title") {
             SectionTitle(
                 "Хиты недели",
-                Modifier.sectionPart(top = true, bottom = false).padding(start = padding, end = padding, top = 20.dp, bottom = 14.dp),
+                Modifier.sectionPart(top = true, bottom = false).padding(start = padding, end = padding, top = 20.dp, bottom = 12.dp),
             )
         }
         val rows = state.hits.chunked(columns)
         itemsIndexed(rows, key = { _, row -> "hits-" + row.first().id }) { index, row ->
             Row(
                 Modifier.sectionPart(top = false, bottom = index == rows.lastIndex)
-                    .padding(start = padding, end = padding, bottom = if (index == rows.lastIndex) 16.dp else 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(start = GRID_EDGE, end = GRID_EDGE, bottom = if (index == rows.lastIndex) 12.dp else 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(GRID_GAP),
             ) {
                 row.forEach { product ->
                     ShopProductCard(product, state, onIntent, onOpenProduct, Modifier.weight(1f))
@@ -214,6 +228,7 @@ private fun ShopProductCard(
     onIntent: (Intent) -> Unit,
     onOpenProduct: (String) -> Unit,
     modifier: Modifier,
+    carousel: Boolean = false,
 ) {
     ProductCard(
         name = product.name,
@@ -226,5 +241,6 @@ private fun ShopProductCard(
         onQuantityChange = { onIntent(Intent.ChangeQuantity(product.id, it)) },
         modifier = modifier,
         productId = product.id,
+        carousel = carousel,
     )
 }

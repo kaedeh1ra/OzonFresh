@@ -9,9 +9,9 @@ object Destinations {
     const val HOME = "home"
     const val CATALOG = "catalog"
     const val CART = "cart"
-    const val PROFILE = "profile"
+    const val READY = "ready"
 
-    /** Демо-панель для защиты: открывается долгим нажатием на адрес или скрытой кнопкой в профиле. */
+    /** Демо-панель для защиты: открывается крестиком в шапке или долгим нажатием на адрес. */
     const val DEMO = "demo"
 
     const val PRODUCT = "product/{id}"
