@@ -103,7 +103,7 @@
 
 **iOS** (только на Mac с Xcode 16+): открыть `iosApp/iosApp.xcodeproj`, схема `iosApp`, симулятор, Run.
 Xcode сам соберёт Kotlin-фреймворк `Shared`. Для запуска на устройстве впишите Team ID в
-`iosApp/Configuration/Config.xcconfig`.
+`iosApp/Configuration/Config.xcconfig`. Пошаговая установка на iPhone с командами: [iosApp/README.md](iosApp/README.md).
 
 ## Устройство проекта
 
